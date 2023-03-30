@@ -8,7 +8,7 @@ export interface Logger {
 }
 
 export default class Archiver {
-  public toolsPath = 'tmp/appmap';
+  public toolsPath = '/tmp/appmap';
   public archiveBranch = 'appmap-archive';
   public push = true;
 
