@@ -20,5 +20,7 @@ $ yarn package
 
 ## TODO
 
-- [ ] Add description to action.yml
-- [ ] Consume AppMap tools path from getappmap/install-appmap-action
+- [ ] Add description to action.yml.
+- [ ] Store AppMap archive contents as an artifact.
+- [ ] Optionally remove the AppMap data from the archive, and point to the artifact instead.
+- [x] Consume AppMap tools path from getappmap/install-appmap-action.
