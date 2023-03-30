@@ -1,11 +1,5 @@
 name: Build and save AppMap archives
-description:
-  TODO
 inputs:
-  archive-branch:
-    description: Branch to use for AppMap archives
-    default: appmap-archive
-    required: false
   verbose:
     description: Enable verbose logging.
     required: false

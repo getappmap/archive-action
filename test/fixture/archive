@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+echo Archive created at $(date) > .appmap/archive.txt
