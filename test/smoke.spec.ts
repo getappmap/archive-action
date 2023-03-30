@@ -30,7 +30,7 @@ describe('archive-appmap-action', () => {
 
     const cleanupBranch = async () => {
       await executeCommand(`git config user.email ${currentEmail}`);
-      await executeCommand(`git config user.name ${currentName}`);
+      await executeCommand(`git config user.name "${currentName}"`);
       await executeCommand(`git checkout ${currentBranch}`);
       await executeCommand(`git branch -D ${archiveBranch}`);
     };
