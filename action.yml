@@ -1,0 +1,9 @@
+name: Build and save AppMap archives
+inputs:
+  verbose:
+    description: Enable verbose logging.
+    required: false
+    default: false
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
