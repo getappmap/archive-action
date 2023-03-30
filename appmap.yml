@@ -1,0 +1,5 @@
+name: archive-appmap-action
+packages:
+  - path: src
+language: javascript
+appmap_dir: tmp/appmap
