@@ -18,6 +18,8 @@ class MockArtifactStore implements ArtifactStore {
 describe('archive-appmap-action', () => {
   beforeEach(() => process.chdir(join(__dirname, 'fixture')));
   beforeEach(() => rm('.appmap/archive.tar', {force: true}));
+  beforeEach(() => rm('tmp/.appmap.diff', {force: true}));
+  afterEach(() => rm('tmp/.appmap.diff', {force: true}));
   afterEach(() => rm('.appmap/archive.tar', {force: true}));
   afterEach(() => process.chdir(pwd));
 

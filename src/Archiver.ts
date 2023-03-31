@@ -1,4 +1,5 @@
 import assert from 'assert';
+import {stat} from 'fs/promises';
 import {basename} from 'path';
 import {executeCommand} from './executeCommand';
 
@@ -31,17 +32,24 @@ export default class Archiver {
     let ref = process.env.GITHUB_REF;
     if (ref) ref = [ref, `(${revision})`].join(' ');
     else ref = revision;
-    for (const command of [
-      `git fetch`,
-      `git add .appmap`,
-      `git checkout ${this.archiveBranch}`,
-      `git -c user.name="github-actions[bot]" -c user.email="github-actions[bot]@users.noreply.github.com" commit --author="Author <actions@github.com> " -m "chore: AppMaps for ${ref}"`,
-      this.push ? `git push origin ${this.archiveBranch}` : undefined,
-      `git checkout ${revision}`,
-    ].filter(Boolean)) {
-      assert(command);
+
+    const applyCommand = async (command: string | undefined) => {
+      if (!command) return;
+
       await executeCommand(command);
-    }
+    };
+
+    await applyCommand(`git fetch`);
+    await applyCommand(`git stash -u -- .appmap`);
+    await applyCommand(`git checkout ${this.archiveBranch}`);
+    await applyCommand(`git stash apply`);
+    await applyCommand(`git add .appmap`);
+    await applyCommand(
+      `git -c user.name="github-actions[bot]" -c user.email="github-actions[bot]@users.noreply.github.com" commit --author="Author <actions@github.com> " -m "chore: AppMaps for ${ref}"`
+    );
+    if (this.push) await applyCommand(`git push origin ${this.archiveBranch}`);
+    await applyCommand(`git checkout ${revision}`);
+    await applyCommand(`git stash pop`);
 
     const archiveFiles = branchStatus
       .map(status => status.split(' ')[1])

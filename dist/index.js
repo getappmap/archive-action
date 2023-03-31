@@ -15,11 +15,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const assert_1 = __importDefault(__nccwpck_require__(9491));
 const path_1 = __nccwpck_require__(1017);
 const executeCommand_1 = __nccwpck_require__(3285);
 class Archiver {
@@ -42,17 +38,21 @@ class Archiver {
                 ref = [ref, `(${revision})`].join(' ');
             else
                 ref = revision;
-            for (const command of [
-                `git fetch`,
-                `git add .appmap`,
-                `git checkout ${this.archiveBranch}`,
-                `git -c user.name="github-actions[bot]" -c user.email="github-actions[bot]@users.noreply.github.com" commit --author="Author <actions@github.com> " -m "chore: AppMaps for ${ref}"`,
-                this.push ? `git push origin ${this.archiveBranch}` : undefined,
-                `git checkout ${revision}`,
-            ].filter(Boolean)) {
-                (0, assert_1.default)(command);
+            const applyCommand = (command) => __awaiter(this, void 0, void 0, function* () {
+                if (!command)
+                    return;
                 yield (0, executeCommand_1.executeCommand)(command);
-            }
+            });
+            yield applyCommand(`git fetch`);
+            yield applyCommand(`git stash -u -- .appmap`);
+            yield applyCommand(`git checkout ${this.archiveBranch}`);
+            yield applyCommand(`git stash apply`);
+            yield applyCommand(`git add .appmap`);
+            yield applyCommand(`git -c user.name="github-actions[bot]" -c user.email="github-actions[bot]@users.noreply.github.com" commit --author="Author <actions@github.com> " -m "chore: AppMaps for ${ref}"`);
+            if (this.push)
+                yield applyCommand(`git push origin ${this.archiveBranch}`);
+            yield applyCommand(`git checkout ${revision}`);
+            yield applyCommand(`git stash pop`);
             const archiveFiles = branchStatus
                 .map(status => status.split(' ')[1])
                 .filter(path => path.endsWith('.tar'));
