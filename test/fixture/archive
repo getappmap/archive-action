@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
-echo Archive created at $(date) > .appmap/archive.txt
-tar cf .appmap/archive.tar .appmap/archive.txt
-rm .appmap/archive.txt
+cd tmp/appmap
+tar czf appmaps.tar.gz **/*.appmap.json
+echo {\"name\": \"Dummy / sample archive created on $(date)\"} > appmap_archive.json
+tar cf 402dec8.tar appmaps.tar.gz appmap_archive.json
+cd -
+
+mkdir -p .appmap/archive/full
+mv tmp/appmap/402dec8.tar .appmap/archive/full/

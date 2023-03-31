@@ -1,11 +1,13 @@
 import {randomUUID} from 'crypto';
-import {join} from 'path';
 import Archiver, {ArtifactStore} from '../src/Archiver';
 import {archive} from '../src/index';
 import {executeCommand} from '../src/executeCommand';
-import {rm} from 'fs/promises';
+import {cp, readFile, rm} from 'fs/promises';
+import {join} from 'path';
 
 const pwd = process.cwd();
+const fixtureDir = join(__dirname, 'fixture');
+const workDir = join(__dirname, 'work');
 
 class MockArtifactStore implements ArtifactStore {
   public artifacts = new Map<string, string>();
@@ -16,12 +18,10 @@ class MockArtifactStore implements ArtifactStore {
 }
 
 describe('archive-appmap-action', () => {
-  beforeEach(() => process.chdir(join(__dirname, 'fixture')));
-  beforeEach(() => rm('.appmap/archive.tar', {force: true}));
-  beforeEach(() => rm('tmp/.appmap.diff', {force: true}));
-  afterEach(() => rm('tmp/.appmap.diff', {force: true}));
-  afterEach(() => rm('.appmap/archive.tar', {force: true}));
+  beforeEach(async () => cp(fixtureDir, workDir, {recursive: true, force: true}));
+  beforeEach(() => process.chdir(workDir));
   afterEach(() => process.chdir(pwd));
+  afterEach(async () => rm(workDir, {recursive: true, force: true}));
 
   it('build and store an AppMap archive', async () => {
     const artifactStore = new MockArtifactStore();
@@ -35,11 +35,7 @@ describe('archive-appmap-action', () => {
       archiver.toolsPath = './archive';
       archiver.archiveBranch = archiveBranch;
       archiver.push = false;
-      const archiveResult = await archive(archiver);
-
-      expect(archiveResult.branchStatus.find(status => status.endsWith('.tar'))).toMatch(
-        /\s\.appmap\/archive\.tar/
-      );
+      await archive(archiver);
     };
 
     const cleanupBranch = async () => {
@@ -53,7 +49,19 @@ describe('archive-appmap-action', () => {
       await cleanupBranch();
     }
 
-    expect([...artifactStore.artifacts.keys()]).toEqual(['archive']);
-    expect(artifactStore.artifacts.get('archive')).toBe('.appmap/archive.tar');
+    expect([...artifactStore.artifacts.keys()].sort()).toEqual([
+      'appmaps-402dec8.json',
+      'appmaps-402dec8.tar.gz',
+    ]);
+    expect(artifactStore.artifacts.get('appmaps-402dec8.json')).toBe(
+      '.appmap/archive/full/402dec8.json'
+    );
+    expect(artifactStore.artifacts.get('appmaps-402dec8.tar.gz')).toBe(
+      '.appmap/archive/full/appmaps.tar.gz'
+    );
+    const metadata = JSON.parse(
+      await readFile(artifactStore.artifacts.get('appmaps-402dec8.json')!, 'utf8')
+    );
+    expect(metadata.github_artifact_name).toEqual('appmaps-402dec8.tar.gz');
   });
 });
