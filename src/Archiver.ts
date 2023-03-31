@@ -32,15 +32,13 @@ export default class Archiver {
     if (ref) ref = [ref, `(${revision})`].join(' ');
     else ref = revision;
     for (const command of [
-      `git fetch`,
+      `git fetch --depth=1`,
       `git add .appmap`,
       `git stash`,
       `git checkout ${this.archiveBranch}`,
       `git stash pop`,
       `git add .appmap`,
-      `git config user.email "github-actions[bot]@users.noreply.github.com"`,
-      `git config user.name "github-actions[bot]"`,
-      `git commit -m "chore: AppMaps for ${ref}"`,
+      `git -c user.name="github-actions[bot]" -c user.email="github-actions[bot]@users.noreply.github.com" commit --author="Author <actions@github.com> " -m "chore: AppMaps for ${ref}"`,
       this.push ? `git push origin ${this.archiveBranch}` : undefined,
       `git checkout ${revision}`,
     ].filter(Boolean)) {
