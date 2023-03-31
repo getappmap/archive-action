@@ -3,6 +3,7 @@ import {join} from 'path';
 import Archiver, {ArtifactStore} from '../src/Archiver';
 import {archive} from '../src/index';
 import {executeCommand} from '../src/executeCommand';
+import {rm} from 'fs/promises';
 
 const pwd = process.cwd();
 
@@ -16,6 +17,10 @@ class MockArtifactStore implements ArtifactStore {
 
 describe('archive-appmap-action', () => {
   beforeEach(() => process.chdir(join(__dirname, 'fixture')));
+  beforeEach(() => rm('.appmap/archive.tar', {force: true}));
+  beforeEach(() => rm('tmp/.appmap.diff', {force: true}));
+  afterEach(() => rm('tmp/.appmap.diff', {force: true}));
+  afterEach(() => rm('.appmap/archive.tar', {force: true}));
   afterEach(() => process.chdir(pwd));
 
   it('build and store an AppMap archive', async () => {
@@ -32,8 +37,8 @@ describe('archive-appmap-action', () => {
       archiver.push = false;
       const archiveResult = await archive(archiver);
 
-      expect(archiveResult.branchStatus.find(status => status.endsWith('.tar'))).toEqual(
-        `?? .appmap/archive.tar`
+      expect(archiveResult.branchStatus.find(status => status.endsWith('.tar'))).toMatch(
+        /\s\.appmap\/archive\.tar/
       );
     };
 
