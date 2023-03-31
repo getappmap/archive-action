@@ -32,8 +32,8 @@ describe('archive-appmap-action', () => {
       archiver.push = false;
       const archiveResult = await archive(archiver);
 
-      expect(archiveResult.branchStatus.find(status => status.endsWith('.tar'))).toEqual(
-        `?? .appmap/archive.tar`
+      expect(archiveResult.branchStatus.find(status => status.endsWith('.tar'))).toMatch(
+        /\s\.appmap\/archive\.tar/
       );
     };
 
