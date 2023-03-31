@@ -1,0 +1,37 @@
+{
+  "versions": {
+    "archive": "1.0",
+    "index": "1.1.4",
+    "@appland/appmap": "3.73.0"
+  },
+  "workingDirectory": "/home/runner/work/archive-appmap-action/archive-appmap-action",
+  "appMapDir": "tmp/appmap",
+  "commandArguments": {
+    "_": [
+      "archive"
+    ],
+    "type": "auto",
+    "t": "auto",
+    "concurrency": 5,
+    "max-size": 50,
+    "maxSize": 50,
+    "$0": "/tmp/appmap"
+  },
+  "revision": "edd0a1b2ebe6eec183244552175547bd167360f0",
+  "timestamp": "1680295036781",
+  "oversizedAppMaps": [],
+  "config": {
+    "name": "archive-appmap-action",
+    "packages": [
+      {
+        "path": "build"
+      },
+      {
+        "path": "src"
+      }
+    ],
+    "language": "javascript",
+    "appmap_dir": "tmp/appmap"
+  },
+  "github_artifact_name": "appmaps-edd0a1b2ebe6eec183244552175547bd167360f0.tar.gz"
+}
