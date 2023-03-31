@@ -22,8 +22,6 @@ describe('archive-appmap-action', () => {
     const artifactStore = new MockArtifactStore();
     const archiveBranch = randomUUID();
     const currentBranch = await executeCommand('git rev-parse --abbrev-ref HEAD');
-    const currentEmail = (await executeCommand(`git config user.email`)).trim();
-    const currentName = (await executeCommand(`git config user.name`)).trim();
     await executeCommand(`git checkout -b ${archiveBranch}`);
     await executeCommand(`git checkout ${currentBranch}`);
 
@@ -40,8 +38,6 @@ describe('archive-appmap-action', () => {
     };
 
     const cleanupBranch = async () => {
-      await executeCommand(`git config user.email ${currentEmail}`);
-      await executeCommand(`git config user.name "${currentName}"`);
       await executeCommand(`git checkout ${currentBranch}`);
       await executeCommand(`git branch -D ${archiveBranch}`);
     };
