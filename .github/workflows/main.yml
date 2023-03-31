@@ -18,6 +18,9 @@ jobs:
         run: yarn test
       - name: Build GitHub action
         run: yarn package
+      - name: Make AppMaps
+        # appmap-agent-js@13.6.0 doesn't propagate the jest exit code, so the main Test step cannot be the AppMap step.
+        run: yarn appmap
       - name: Create and store AppMaps archive
         uses: ./
         id: appmap-archive

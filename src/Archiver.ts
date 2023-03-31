@@ -1,4 +1,5 @@
 import assert from 'assert';
+import {basename} from 'path';
 import {executeCommand} from './executeCommand';
 
 export interface Logger {
@@ -7,12 +8,16 @@ export interface Logger {
   warn(message: string): void;
 }
 
+export interface ArtifactStore {
+  uploadArtifact(name: string, path: string): Promise<void>;
+}
+
 export default class Archiver {
   public toolsPath = '/tmp/appmap';
   public archiveBranch = 'appmap-archive';
   public push = true;
 
-  constructor(public logger: Logger = console) {}
+  constructor(public artifactStore: ArtifactStore, public logger: Logger = console) {}
 
   async archive(): Promise<{branchStatus: string[]}> {
     this.logger.info(`Archiving AppMaps from ${process.cwd()}`);
@@ -31,16 +36,23 @@ export default class Archiver {
       `git add .appmap`,
       `git stash`,
       `git checkout ${this.archiveBranch}`,
-      `git stash pop`,
+      `git stash apply`,
       `git add .appmap`,
-      `git config user.email "github-actions[bot]@users.noreply.github.com"`,
-      `git config user.name "github-actions[bot]"`,
-      `git commit -m "chore: AppMaps for ${ref}"`,
+      `git -c user.name="github-actions[bot]" -c user.email="github-actions[bot]@users.noreply.github.com" commit --author="Author <actions@github.com> " -m "chore: AppMaps for ${ref}"`,
       this.push ? `git push origin ${this.archiveBranch}` : undefined,
       `git checkout ${revision}`,
+      `git stash pop`,
     ].filter(Boolean)) {
       assert(command);
       await executeCommand(command);
+    }
+
+    const archiveFiles = branchStatus
+      .map(status => status.split(' ')[1])
+      .filter(path => path.endsWith('.tar'));
+    for (const archiveFile of archiveFiles) {
+      const [sha] = basename(archiveFile).split('.');
+      await this.artifactStore.uploadArtifact(sha, archiveFile);
     }
 
     return {branchStatus};
