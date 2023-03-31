@@ -45,14 +45,10 @@ class Archiver {
             for (const command of [
                 `git fetch`,
                 `git add .appmap`,
-                `git stash`,
                 `git checkout ${this.archiveBranch}`,
-                `git stash apply`,
-                `git add .appmap`,
                 `git -c user.name="github-actions[bot]" -c user.email="github-actions[bot]@users.noreply.github.com" commit --author="Author <actions@github.com> " -m "chore: AppMaps for ${ref}"`,
                 this.push ? `git push origin ${this.archiveBranch}` : undefined,
                 `git checkout ${revision}`,
-                `git stash pop`,
             ].filter(Boolean)) {
                 (0, assert_1.default)(command);
                 yield (0, executeCommand_1.executeCommand)(command);
