@@ -1,4 +1,5 @@
 import assert from 'assert';
+import {basename} from 'path';
 import {executeCommand} from './executeCommand';
 
 export interface Logger {
@@ -7,12 +8,16 @@ export interface Logger {
   warn(message: string): void;
 }
 
+export interface ArtifactStore {
+  uploadArtifact(name: string, path: string): Promise<void>;
+}
+
 export default class Archiver {
   public toolsPath = '/tmp/appmap';
   public archiveBranch = 'appmap-archive';
   public push = true;
 
-  constructor(public logger: Logger = console) {}
+  constructor(public artifactStore: ArtifactStore, public logger: Logger = console) {}
 
   async archive(): Promise<{branchStatus: string[]}> {
     this.logger.info(`Archiving AppMaps from ${process.cwd()}`);
@@ -41,6 +46,14 @@ export default class Archiver {
     ].filter(Boolean)) {
       assert(command);
       await executeCommand(command);
+    }
+
+    const archiveFiles = branchStatus
+      .map(status => status.split(' ')[1])
+      .filter(path => path.endsWith('.tar'));
+    for (const archiveFile of archiveFiles) {
+      const [sha] = basename(archiveFile).split('.');
+      await this.artifactStore.uploadArtifact(sha, archiveFile);
     }
 
     return {branchStatus};

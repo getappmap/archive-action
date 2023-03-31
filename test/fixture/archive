@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
 
 echo Archive created at $(date) > .appmap/archive.txt
+tar cf .appmap/archive.tar .appmap/archive.txt
+rm .appmap/archive.txt

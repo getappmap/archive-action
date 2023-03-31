@@ -1,5 +1,6 @@
 import * as core from '@actions/core';
-import Archiver, {Logger} from './Archiver';
+import * as artifact from '@actions/artifact';
+import Archiver, {Logger, ArtifactStore} from './Archiver';
 import verbose from './verbose';
 
 class ActionLogger implements Logger {
@@ -16,6 +17,13 @@ class ActionLogger implements Logger {
   }
 }
 
+class GitHubArtifactStore implements ArtifactStore {
+  async uploadArtifact(name: string, path: string): Promise<void> {
+    const artifactClient = artifact.create();
+    await artifactClient.uploadArtifact(name, [path], process.cwd());
+  }
+}
+
 function usage(): string {
   return `Usage: node ${process.argv[1]}`;
 }
@@ -25,15 +33,8 @@ export interface ArchiveResults {
 }
 
 async function runInGitHub(): Promise<ArchiveResults> {
-  core.debug(`Env var 'CI' is set. Running as a GitHub action.`);
   verbose(core.getBooleanInput('verbose'));
-  const archiver = new Archiver(new ActionLogger());
-  return archive(archiver);
-}
-
-async function runAsScript(): Promise<ArchiveResults> {
-  console.log(`Env var 'CI' is not set. Running as a local script.`);
-  const archiver = new Archiver();
+  const archiver = new Archiver(new GitHubArtifactStore(), new ActionLogger());
   return archive(archiver);
 }
 
@@ -42,9 +43,5 @@ export async function archive(archiver: Archiver): Promise<ArchiveResults> {
 }
 
 if (require.main === module) {
-  if (process.env.CI) {
-    runInGitHub();
-  } else {
-    runAsScript();
-  }
+  runInGitHub();
 }
