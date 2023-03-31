@@ -3,6 +3,7 @@ import {join} from 'path';
 import Archiver, {ArtifactStore} from '../src/Archiver';
 import {archive} from '../src/index';
 import {executeCommand} from '../src/executeCommand';
+import {rm} from 'fs/promises';
 
 const pwd = process.cwd();
 
@@ -16,6 +17,8 @@ class MockArtifactStore implements ArtifactStore {
 
 describe('archive-appmap-action', () => {
   beforeEach(() => process.chdir(join(__dirname, 'fixture')));
+  beforeEach(() => rm('.appmap/archive.tar', {force: true}));
+  afterEach(() => rm('.appmap/archive.tar', {force: true}));
   afterEach(() => process.chdir(pwd));
 
   it('build and store an AppMap archive', async () => {
