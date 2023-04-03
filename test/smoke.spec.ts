@@ -34,6 +34,7 @@ describe('archive-appmap-action', () => {
       const archiver = new Archiver(artifactStore);
       archiver.toolsPath = './archive';
       archiver.archiveBranch = archiveBranch;
+      archiver.commit = true;
       archiver.push = false;
       await archive(archiver);
     };
@@ -50,18 +51,18 @@ describe('archive-appmap-action', () => {
     }
 
     expect([...artifactStore.artifacts.keys()].sort()).toEqual([
-      'appmaps-402dec8.json',
-      'appmaps-402dec8.tar.gz',
+      'appmap-archive-full_402dec8.json',
+      'appmap-archive-full_402dec8.tar.gz',
     ]);
-    expect(artifactStore.artifacts.get('appmaps-402dec8.json')).toBe(
-      '.appmap/archive/full/402dec8.json'
+    expect(artifactStore.artifacts.get('appmap-archive-full_402dec8.json')).toBe(
+      '.appmap/archive/full/appmap_archive.json'
     );
-    expect(artifactStore.artifacts.get('appmaps-402dec8.tar.gz')).toBe(
+    expect(artifactStore.artifacts.get('appmap-archive-full_402dec8.tar.gz')).toBe(
       '.appmap/archive/full/appmaps.tar.gz'
     );
     const metadata = JSON.parse(
-      await readFile(artifactStore.artifacts.get('appmaps-402dec8.json')!, 'utf8')
+      await readFile(artifactStore.artifacts.get('appmap-archive-full_402dec8.json')!, 'utf8')
     );
-    expect(metadata.github_artifact_name).toEqual('appmaps-402dec8.tar.gz');
+    expect(metadata.github_artifact_name).toEqual('appmap-archive-full_402dec8.tar.gz');
   });
 });

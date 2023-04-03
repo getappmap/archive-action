@@ -15,6 +15,7 @@ export interface ArtifactStore {
 export default class Archiver {
   public toolsPath = '/tmp/appmap';
   public archiveBranch = 'appmap-archive';
+  public commit = false;
   public push = true;
 
   constructor(public artifactStore: ArtifactStore, public logger: Logger = console) {}
@@ -43,43 +44,47 @@ export default class Archiver {
       .filter(path => path.endsWith('.tar'));
 
     for (const archiveFile of archiveFiles) {
+      // e.g. .appmap/archive/full
       const dir = dirname(archiveFile);
+      // e.g. appmap-archive-full
+      const artifactPrefix = dir.replace(/\//g, '-').replace(/\./g, '');
       const [sha] = basename(archiveFile).split('.');
+      const manifestFilename = `${artifactPrefix}_${sha}.json`;
+      const appmapsFilename = `${artifactPrefix}_${sha}.tar.gz`;
+
+      // Extract the archive so that the individual files can be uploaded as artifacts.
+      // This way, a clien can cheaply download the manifest JSON file and decide
+      // whether to pull the AppMap tarball.
       await executeCommand(`tar xf ${archiveFile} -C ${dir}`);
-      const appmapsFilename = [sha, 'tar.gz'].join('.');
-      await this.artifactStore.uploadArtifact(
-        ['appmaps', appmapsFilename].join('-'),
-        join(dir, 'appmaps.tar.gz')
-      );
-      const manifestFilename = 'appmap_archive.json';
-      await rename(join(dir, manifestFilename), join(dir, [sha, 'json'].join('.')));
-      const manifestData = JSON.parse(await readFile(join(dir, [sha, 'json'].join('.')), 'utf8'));
-      manifestData['github_artifact_name'] = ['appmaps', appmapsFilename].join('-');
-      await writeFile(join(dir, [sha, 'json'].join('.')), JSON.stringify(manifestData, null, 2));
-      await this.artifactStore.uploadArtifact(
-        ['appmaps', [sha, 'json'].join('.')].join('-'),
-        join(dir, [sha, 'json'].join('.'))
-      );
 
-      await rm(join(dir, 'appmaps.tar.gz'), {force: true});
-      await rm(join(dir, [sha, 'tar'].join('.')), {force: true});
+      // Upload the AppMaps tarball as e.g. appmap-archive-full_<sha>.tar.gz
+      await this.artifactStore.uploadArtifact(appmapsFilename, join(dir, 'appmaps.tar.gz'));
+
+      // Inject the GitHub artifact name into the manifest JSON file.
+      const manifestData = JSON.parse(await readFile(join(dir, 'appmap_archive.json'), 'utf8'));
+      manifestData['github_artifact_name'] = appmapsFilename;
+      await writeFile(join(dir, 'appmap_archive.json'), JSON.stringify(manifestData, null, 2));
+
+      await this.artifactStore.uploadArtifact(manifestFilename, join(dir, 'appmap_archive.json'));
     }
 
-    await applyCommand(`git fetch`);
-    await applyCommand(`git stash -u -- .appmap`);
-    await applyCommand(`git checkout ${this.archiveBranch}`);
-    await applyCommand(`git stash apply`);
-    await applyCommand(`git add .appmap`);
-    await applyCommand(
-      `git -c user.name="github-actions[bot]" -c user.email="github-actions[bot]@users.noreply.github.com" commit --author="Author <actions@github.com> " -m "chore: AppMaps for ${ref}"`
-    );
+    if (this.commit) {
+      await applyCommand(`git fetch`);
+      await applyCommand(`git stash -u -- .appmap`);
+      await applyCommand(`git checkout ${this.archiveBranch}`);
+      await applyCommand(`git stash apply`);
+      await applyCommand(`git add .appmap`);
+      await applyCommand(
+        `git -c user.name="github-actions[bot]" -c user.email="github-actions[bot]@users.noreply.github.com" commit --author="Author <actions@github.com> " -m "chore: AppMaps for ${ref}"`
+      );
 
-    if (this.push) {
-      await applyCommand(`git push origin ${this.archiveBranch}`);
+      if (this.push) {
+        await applyCommand(`git push origin ${this.archiveBranch}`);
+      }
+
+      await applyCommand(`git checkout ${revision}`);
+      await applyCommand(`git stash pop`);
     }
-
-    await applyCommand(`git checkout ${revision}`);
-    await applyCommand(`git stash pop`);
 
     return {branchStatus};
   }
