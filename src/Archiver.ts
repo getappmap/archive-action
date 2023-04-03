@@ -1,20 +1,22 @@
 import {readFile, rename, rm, writeFile} from 'fs/promises';
 import {basename, dirname, join} from 'path';
 import {executeCommand} from './executeCommand';
-
-export interface Logger {
-  debug(message: string): void;
-  info(message: string): void;
-  warn(message: string): void;
-}
+import {Logger} from './Logger';
 
 export interface ArtifactStore {
   uploadArtifact(name: string, path: string): Promise<void>;
 }
 
+async function applyCommand(command: string | undefined) {
+  if (!command) return;
+
+  await executeCommand(command);
+}
+
 export default class Archiver {
   public toolsPath = '/tmp/appmap';
   public archiveBranch = 'appmap-archive';
+  public revision?: boolean | string;
   public commit = false;
   public push = true;
 
@@ -23,21 +25,12 @@ export default class Archiver {
   async archive(): Promise<{branchStatus: string[]}> {
     this.logger.info(`Archiving AppMaps from ${process.cwd()}`);
 
-    const archiveCommand = `${this.toolsPath} archive`;
+    const revision = this.revision === false ? undefined : this.revision || process.env.GITHUB_SHA;
+    let archiveCommand = `${this.toolsPath} archive`;
+    if (revision) archiveCommand += ` --revision ${revision}`;
     await executeCommand(archiveCommand);
 
-    const revision = (await executeCommand('git rev-parse HEAD')).trim();
-    let ref = process.env.GITHUB_REF;
-    if (ref) ref = [ref, `(${revision})`].join(' ');
-    else ref = revision;
-
     const branchStatus = (await executeCommand('git status -u -s -- .appmap')).trim().split('\n');
-
-    const applyCommand = async (command: string | undefined) => {
-      if (!command) return;
-
-      await executeCommand(command);
-    };
 
     const archiveFiles = branchStatus
       .map(status => status.split(' ')[1])
@@ -69,6 +62,11 @@ export default class Archiver {
     }
 
     if (this.commit) {
+      const revision = (await executeCommand('git rev-parse HEAD')).trim();
+      let ref = process.env.GITHUB_REF;
+      if (ref) ref = [ref, `(${revision})`].join(' ');
+      else ref = revision;
+
       await applyCommand(`git fetch`);
       await applyCommand(`git stash -u -- .appmap`);
       await applyCommand(`git checkout ${this.archiveBranch}`);

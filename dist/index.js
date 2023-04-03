@@ -1,6 +1,53 @@
 require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
+/***/ 937:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ActionLogger = void 0;
+const core = __importStar(__nccwpck_require__(2186));
+class ActionLogger {
+    debug(message) {
+        core.debug(message);
+    }
+    info(message) {
+        core.info(message);
+    }
+    warn(message) {
+        core.warning(message);
+    }
+}
+exports.ActionLogger = ActionLogger;
+
+
+/***/ }),
+
 /***/ 1626:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -19,6 +66,13 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const promises_1 = __nccwpck_require__(3292);
 const path_1 = __nccwpck_require__(1017);
 const executeCommand_1 = __nccwpck_require__(3285);
+function applyCommand(command) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (!command)
+            return;
+        yield (0, executeCommand_1.executeCommand)(command);
+    });
+}
 class Archiver {
     constructor(artifactStore, logger = console) {
         this.artifactStore = artifactStore;
@@ -31,20 +85,12 @@ class Archiver {
     archive() {
         return __awaiter(this, void 0, void 0, function* () {
             this.logger.info(`Archiving AppMaps from ${process.cwd()}`);
-            const archiveCommand = `${this.toolsPath} archive`;
+            const revision = this.revision || process.env.GITHUB_SHA;
+            let archiveCommand = `${this.toolsPath} archive`;
+            if (revision)
+                archiveCommand += ` --revision ${revision}`;
             yield (0, executeCommand_1.executeCommand)(archiveCommand);
-            const revision = (yield (0, executeCommand_1.executeCommand)('git rev-parse HEAD')).trim();
-            let ref = process.env.GITHUB_REF;
-            if (ref)
-                ref = [ref, `(${revision})`].join(' ');
-            else
-                ref = revision;
             const branchStatus = (yield (0, executeCommand_1.executeCommand)('git status -u -s -- .appmap')).trim().split('\n');
-            const applyCommand = (command) => __awaiter(this, void 0, void 0, function* () {
-                if (!command)
-                    return;
-                yield (0, executeCommand_1.executeCommand)(command);
-            });
             const archiveFiles = branchStatus
                 .map(status => status.split(' ')[1])
                 .filter(path => path.endsWith('.tar'));
@@ -69,6 +115,12 @@ class Archiver {
                 yield this.artifactStore.uploadArtifact(manifestFilename, (0, path_1.join)(dir, 'appmap_archive.json'));
             }
             if (this.commit) {
+                const revision = (yield (0, executeCommand_1.executeCommand)('git rev-parse HEAD')).trim();
+                let ref = process.env.GITHUB_REF;
+                if (ref)
+                    ref = [ref, `(${revision})`].join(' ');
+                else
+                    ref = revision;
                 yield applyCommand(`git fetch`);
                 yield applyCommand(`git stash -u -- .appmap`);
                 yield applyCommand(`git checkout ${this.archiveBranch}`);
@@ -102,21 +154,21 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.executeCommand = void 0;
 const child_process_1 = __nccwpck_require__(2081);
 const verbose_1 = __importDefault(__nccwpck_require__(1753));
-function executeCommand(cmd, printCommand = false, printStdout = false, printStderr = false) {
-    if (printCommand || (0, verbose_1.default)())
+function executeCommand(cmd, printCommand = (0, verbose_1.default)(), printStdout = (0, verbose_1.default)(), printStderr = (0, verbose_1.default)()) {
+    if (printCommand)
         console.log(cmd);
     const command = (0, child_process_1.exec)(cmd);
     const result = [];
     const stderr = [];
     if (command.stdout) {
         command.stdout.addListener('data', data => {
-            if (printStdout || (0, verbose_1.default)())
+            if (printStdout)
                 process.stdout.write(data);
             result.push(data);
         });
     }
     if (command.stderr) {
-        if (printStderr || (0, verbose_1.default)())
+        if (printStderr)
             command.stderr.pipe(process.stdout);
         else
             command.stderr.addListener('data', data => stderr.push(data));
@@ -181,22 +233,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.archive = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const artifact = __importStar(__nccwpck_require__(2605));
 const Archiver_1 = __importDefault(__nccwpck_require__(1626));
 const verbose_1 = __importDefault(__nccwpck_require__(1753));
-class ActionLogger {
-    debug(message) {
-        core.debug(message);
-    }
-    info(message) {
-        core.info(message);
-    }
-    warn(message) {
-        core.warning(message);
-    }
-}
+const ActionLogger_1 = __nccwpck_require__(937);
 class GitHubArtifactStore {
     uploadArtifact(name, path) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -205,22 +246,16 @@ class GitHubArtifactStore {
         });
     }
 }
-function usage() {
-    return `Usage: node ${process.argv[1]}`;
-}
 function runInGitHub() {
     return __awaiter(this, void 0, void 0, function* () {
         (0, verbose_1.default)(core.getBooleanInput('verbose'));
-        const archiver = new Archiver_1.default(new GitHubArtifactStore(), new ActionLogger());
-        return archive(archiver);
+        const commitSHA = core.getInput('commit-sha');
+        const archiver = new Archiver_1.default(new GitHubArtifactStore(), new ActionLogger_1.ActionLogger());
+        if (commitSHA)
+            archiver.revision = commitSHA;
+        return archiver.archive();
     });
 }
-function archive(archiver) {
-    return __awaiter(this, void 0, void 0, function* () {
-        return yield archiver.archive();
-    });
-}
-exports.archive = archive;
 if (require.main === require.cache[eval('__filename')]) {
     runInGitHub();
 }
