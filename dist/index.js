@@ -85,7 +85,7 @@ class Archiver {
     archive() {
         return __awaiter(this, void 0, void 0, function* () {
             this.logger.info(`Archiving AppMaps from ${process.cwd()}`);
-            const revision = this.revision || process.env.GITHUB_SHA;
+            const revision = this.revision === false ? undefined : this.revision || process.env.GITHUB_SHA;
             let archiveCommand = `${this.toolsPath} archive`;
             if (revision)
                 archiveCommand += ` --revision ${revision}`;
