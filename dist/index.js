@@ -25,6 +25,7 @@ class Archiver {
         this.logger = logger;
         this.toolsPath = '/tmp/appmap';
         this.archiveBranch = 'appmap-archive';
+        this.commit = false;
         this.push = true;
     }
     archive() {
@@ -48,31 +49,38 @@ class Archiver {
                 .map(status => status.split(' ')[1])
                 .filter(path => path.endsWith('.tar'));
             for (const archiveFile of archiveFiles) {
+                // e.g. .appmap/archive/full
                 const dir = (0, path_1.dirname)(archiveFile);
+                // e.g. appmap-archive-full
+                const artifactPrefix = dir.replace(/\//g, '-').replace(/\./g, '');
                 const [sha] = (0, path_1.basename)(archiveFile).split('.');
+                const manifestFilename = `${artifactPrefix}_${sha}.json`;
+                const appmapsFilename = `${artifactPrefix}_${sha}.tar.gz`;
+                // Extract the archive so that the individual files can be uploaded as artifacts.
+                // This way, a clien can cheaply download the manifest JSON file and decide
+                // whether to pull the AppMap tarball.
                 yield (0, executeCommand_1.executeCommand)(`tar xf ${archiveFile} -C ${dir}`);
-                const appmapsFilename = [sha, 'tar.gz'].join('.');
-                yield this.artifactStore.uploadArtifact(['appmaps', appmapsFilename].join('-'), (0, path_1.join)(dir, 'appmaps.tar.gz'));
-                const manifestFilename = 'appmap_archive.json';
-                yield (0, promises_1.rename)((0, path_1.join)(dir, manifestFilename), (0, path_1.join)(dir, [sha, 'json'].join('.')));
-                const manifestData = JSON.parse(yield (0, promises_1.readFile)((0, path_1.join)(dir, [sha, 'json'].join('.')), 'utf8'));
-                manifestData['github_artifact_name'] = ['appmaps', appmapsFilename].join('-');
-                yield (0, promises_1.writeFile)((0, path_1.join)(dir, [sha, 'json'].join('.')), JSON.stringify(manifestData, null, 2));
-                yield this.artifactStore.uploadArtifact(['appmaps', [sha, 'json'].join('.')].join('-'), (0, path_1.join)(dir, [sha, 'json'].join('.')));
-                yield (0, promises_1.rm)((0, path_1.join)(dir, 'appmaps.tar.gz'), { force: true });
-                yield (0, promises_1.rm)((0, path_1.join)(dir, [sha, 'tar'].join('.')), { force: true });
+                // Upload the AppMaps tarball as e.g. appmap-archive-full_<sha>.tar.gz
+                yield this.artifactStore.uploadArtifact(appmapsFilename, (0, path_1.join)(dir, 'appmaps.tar.gz'));
+                // Inject the GitHub artifact name into the manifest JSON file.
+                const manifestData = JSON.parse(yield (0, promises_1.readFile)((0, path_1.join)(dir, 'appmap_archive.json'), 'utf8'));
+                manifestData['github_artifact_name'] = appmapsFilename;
+                yield (0, promises_1.writeFile)((0, path_1.join)(dir, 'appmap_archive.json'), JSON.stringify(manifestData, null, 2));
+                yield this.artifactStore.uploadArtifact(manifestFilename, (0, path_1.join)(dir, 'appmap_archive.json'));
             }
-            yield applyCommand(`git fetch`);
-            yield applyCommand(`git stash -u -- .appmap`);
-            yield applyCommand(`git checkout ${this.archiveBranch}`);
-            yield applyCommand(`git stash apply`);
-            yield applyCommand(`git add .appmap`);
-            yield applyCommand(`git -c user.name="github-actions[bot]" -c user.email="github-actions[bot]@users.noreply.github.com" commit --author="Author <actions@github.com> " -m "chore: AppMaps for ${ref}"`);
-            if (this.push) {
-                yield applyCommand(`git push origin ${this.archiveBranch}`);
+            if (this.commit) {
+                yield applyCommand(`git fetch`);
+                yield applyCommand(`git stash -u -- .appmap`);
+                yield applyCommand(`git checkout ${this.archiveBranch}`);
+                yield applyCommand(`git stash apply`);
+                yield applyCommand(`git add .appmap`);
+                yield applyCommand(`git -c user.name="github-actions[bot]" -c user.email="github-actions[bot]@users.noreply.github.com" commit --author="Author <actions@github.com> " -m "chore: AppMaps for ${ref}"`);
+                if (this.push) {
+                    yield applyCommand(`git push origin ${this.archiveBranch}`);
+                }
+                yield applyCommand(`git checkout ${revision}`);
+                yield applyCommand(`git stash pop`);
             }
-            yield applyCommand(`git checkout ${revision}`);
-            yield applyCommand(`git stash pop`);
             return { branchStatus };
         });
     }
