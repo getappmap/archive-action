@@ -1,7 +1,7 @@
 require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 937:
+/***/ 1626:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -29,30 +29,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ActionLogger = void 0;
-const core = __importStar(__nccwpck_require__(2186));
-class ActionLogger {
-    debug(message) {
-        core.debug(message);
-    }
-    info(message) {
-        core.info(message);
-    }
-    warn(message) {
-        core.warning(message);
-    }
-}
-exports.ActionLogger = ActionLogger;
-
-
-/***/ }),
-
-/***/ 1626:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -66,6 +42,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const promises_1 = __nccwpck_require__(3292);
 const path_1 = __nccwpck_require__(1017);
 const executeCommand_1 = __nccwpck_require__(3285);
+const log_1 = __importStar(__nccwpck_require__(1285));
 function applyCommand(command) {
     return __awaiter(this, void 0, void 0, function* () {
         if (!command)
@@ -74,9 +51,8 @@ function applyCommand(command) {
     });
 }
 class Archiver {
-    constructor(artifactStore, logger = console) {
+    constructor(artifactStore) {
         this.artifactStore = artifactStore;
-        this.logger = logger;
         this.toolsPath = '/tmp/appmap';
         this.archiveBranch = 'appmap-archive';
         this.commit = false;
@@ -84,17 +60,19 @@ class Archiver {
     }
     archive() {
         return __awaiter(this, void 0, void 0, function* () {
-            this.logger.info(`Archiving AppMaps from ${process.cwd()}`);
+            (0, log_1.default)(log_1.LogLevel.Info, `Archiving AppMaps from ${process.cwd()}`);
             const revision = this.revision === false ? undefined : this.revision || process.env.GITHUB_SHA;
             let archiveCommand = `${this.toolsPath} archive`;
             if (revision)
                 archiveCommand += ` --revision ${revision}`;
             yield (0, executeCommand_1.executeCommand)(archiveCommand);
             const branchStatus = (yield (0, executeCommand_1.executeCommand)('git status -u -s -- .appmap')).trim().split('\n');
+            (0, log_1.default)(log_1.LogLevel.Debug, `Branch status is:\n${branchStatus}`);
             const archiveFiles = branchStatus
                 .map(status => status.split(' ')[1])
                 .filter(path => path.endsWith('.tar'));
             for (const archiveFile of archiveFiles) {
+                (0, log_1.default)(log_1.LogLevel.Debug, `Processing AppMap archive ${archiveFile}`);
                 // e.g. .appmap/archive/full
                 const dir = (0, path_1.dirname)(archiveFile);
                 // e.g. appmap-archive-full
@@ -107,20 +85,24 @@ class Archiver {
                 // whether to pull the AppMap tarball.
                 yield (0, executeCommand_1.executeCommand)(`tar xf ${archiveFile} -C ${dir}`);
                 // Upload the AppMaps tarball as e.g. appmap-archive-full_<sha>.tar.gz
+                (0, log_1.default)(log_1.LogLevel.Debug, `Storing ${appmapsFilename}`);
                 yield this.artifactStore.uploadArtifact(appmapsFilename, (0, path_1.join)(dir, 'appmaps.tar.gz'));
                 // Inject the GitHub artifact name into the manifest JSON file.
                 const manifestData = JSON.parse(yield (0, promises_1.readFile)((0, path_1.join)(dir, 'appmap_archive.json'), 'utf8'));
                 manifestData['github_artifact_name'] = appmapsFilename;
                 yield (0, promises_1.writeFile)((0, path_1.join)(dir, 'appmap_archive.json'), JSON.stringify(manifestData, null, 2));
+                (0, log_1.default)(log_1.LogLevel.Debug, `Storing ${manifestFilename}`);
                 yield this.artifactStore.uploadArtifact(manifestFilename, (0, path_1.join)(dir, 'appmap_archive.json'));
             }
             if (this.commit) {
+                (0, log_1.default)(log_1.LogLevel.Info, `Committing artifact metadata to ${this.archiveBranch}`);
                 const revision = (yield (0, executeCommand_1.executeCommand)('git rev-parse HEAD')).trim();
                 let ref = process.env.GITHUB_REF;
                 if (ref)
                     ref = [ref, `(${revision})`].join(' ');
                 else
                     ref = revision;
+                (0, log_1.default)(log_1.LogLevel.Debug, `Revision is ${revision} on ref ${ref}`);
                 yield applyCommand(`git fetch`);
                 yield applyCommand(`git stash -u -- .appmap`);
                 yield applyCommand(`git checkout ${this.archiveBranch}`);
@@ -128,6 +110,7 @@ class Archiver {
                 yield applyCommand(`git add .appmap`);
                 yield applyCommand(`git -c user.name="github-actions[bot]" -c user.email="github-actions[bot]@users.noreply.github.com" commit --author="Author <actions@github.com> " -m "chore: AppMaps for ${ref}"`);
                 if (this.push) {
+                    (0, log_1.default)(log_1.LogLevel.Info, `Pushing artifact metadata to ${this.archiveBranch}`);
                     yield applyCommand(`git push origin ${this.archiveBranch}`);
                 }
                 yield applyCommand(`git checkout ${revision}`);
@@ -147,12 +130,36 @@ exports["default"] = Archiver;
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.executeCommand = void 0;
 const child_process_1 = __nccwpck_require__(2081);
+const log_1 = __importStar(__nccwpck_require__(1285));
 const verbose_1 = __importDefault(__nccwpck_require__(1753));
 function executeCommand(cmd, printCommand = (0, verbose_1.default)(), printStdout = (0, verbose_1.default)(), printStderr = (0, verbose_1.default)()) {
     if (printCommand)
@@ -163,15 +170,16 @@ function executeCommand(cmd, printCommand = (0, verbose_1.default)(), printStdou
     if (command.stdout) {
         command.stdout.addListener('data', data => {
             if (printStdout)
-                process.stdout.write(data);
+                (0, log_1.default)(log_1.LogLevel.Debug, data);
             result.push(data);
         });
     }
     if (command.stderr) {
-        if (printStderr)
-            command.stderr.pipe(process.stdout);
-        else
-            command.stderr.addListener('data', data => stderr.push(data));
+        command.stderr.addListener('data', data => {
+            if (printStderr)
+                (0, log_1.default)(log_1.LogLevel.Debug, data);
+            stderr.push(data);
+        });
     }
     return new Promise((resolve, reject) => {
         command.addListener('exit', code => {
@@ -180,8 +188,9 @@ function executeCommand(cmd, printCommand = (0, verbose_1.default)(), printStdou
             }
             else {
                 if (!printCommand)
-                    console.log(cmd);
-                console.warn(stderr.join(''));
+                    (0, log_1.default)(log_1.LogLevel.Warn, cmd);
+                (0, log_1.default)(log_1.LogLevel.Warn, stderr.join(''));
+                (0, log_1.default)(log_1.LogLevel.Warn, result.join(''));
                 reject(new Error(`Command failed with code ${code}`));
             }
         });
@@ -237,7 +246,6 @@ const core = __importStar(__nccwpck_require__(2186));
 const artifact = __importStar(__nccwpck_require__(2605));
 const Archiver_1 = __importDefault(__nccwpck_require__(1626));
 const verbose_1 = __importDefault(__nccwpck_require__(1753));
-const ActionLogger_1 = __nccwpck_require__(937);
 class GitHubArtifactStore {
     uploadArtifact(name, path) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -250,7 +258,7 @@ function runInGitHub() {
     return __awaiter(this, void 0, void 0, function* () {
         (0, verbose_1.default)(core.getBooleanInput('verbose'));
         const commitSHA = core.getInput('commit-sha');
-        const archiver = new Archiver_1.default(new GitHubArtifactStore(), new ActionLogger_1.ActionLogger());
+        const archiver = new Archiver_1.default(new GitHubArtifactStore());
         if (commitSHA)
             archiver.revision = commitSHA;
         return archiver.archive();
@@ -259,6 +267,72 @@ function runInGitHub() {
 if (require.main === require.cache[eval('__filename')]) {
     runInGitHub();
 }
+
+
+/***/ }),
+
+/***/ 1285:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.setLogger = exports.ActionLogger = exports.LogLevel = void 0;
+const core = __importStar(__nccwpck_require__(2186));
+var LogLevel;
+(function (LogLevel) {
+    LogLevel["Debug"] = "debug";
+    LogLevel["Info"] = "info";
+    LogLevel["Warn"] = "warn";
+})(LogLevel = exports.LogLevel || (exports.LogLevel = {}));
+class ActionLogger {
+    debug(message) {
+        core.debug(message);
+    }
+    info(message) {
+        core.info(message);
+    }
+    warn(message) {
+        core.warning(message);
+    }
+}
+exports.ActionLogger = ActionLogger;
+let Logger;
+function setLogger(logger) {
+    Logger = logger;
+}
+exports.setLogger = setLogger;
+function log(level, message) {
+    if (!Logger) {
+        console[level](message);
+        return;
+    }
+    Logger[level](message);
+}
+exports["default"] = log;
 
 
 /***/ }),
