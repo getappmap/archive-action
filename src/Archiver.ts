@@ -37,6 +37,14 @@ export default class Archiver {
       .map(status => status.split(' ')[1])
       .filter(path => path.endsWith('.tar'));
 
+    if (archiveFiles.length === 0) {
+      log(LogLevel.Warn, `No AppMap archives found in ${process.cwd()}`);
+      return {branchStatus};
+    }
+    if (archiveFiles.length > 1) {
+      log(LogLevel.Warn, `Mulitple AppMap archives found in ${process.cwd()}`);
+    }
+
     for (const archiveFile of archiveFiles) {
       log(LogLevel.Debug, `Processing AppMap archive ${archiveFile}`);
 
@@ -45,25 +53,9 @@ export default class Archiver {
       // e.g. appmap-archive-full
       const artifactPrefix = dir.replace(/\//g, '-').replace(/\./g, '');
       const [sha] = basename(archiveFile).split('.');
-      const manifestFilename = `${artifactPrefix}_${sha}.json`;
-      const appmapsFilename = `${artifactPrefix}_${sha}.tar.gz`;
+      const artifactName = `${artifactPrefix}_${sha}.tar`;
 
-      // Extract the archive so that the individual files can be uploaded as artifacts.
-      // This way, a clien can cheaply download the manifest JSON file and decide
-      // whether to pull the AppMap tarball.
-      await executeCommand(`tar xf ${archiveFile} -C ${dir}`);
-
-      // Upload the AppMaps tarball as e.g. appmap-archive-full_<sha>.tar.gz
-      log(LogLevel.Debug, `Storing ${appmapsFilename}`);
-      await this.artifactStore.uploadArtifact(appmapsFilename, join(dir, 'appmaps.tar.gz'));
-
-      // Inject the GitHub artifact name into the manifest JSON file.
-      const manifestData = JSON.parse(await readFile(join(dir, 'appmap_archive.json'), 'utf8'));
-      manifestData['github_artifact_name'] = appmapsFilename;
-      await writeFile(join(dir, 'appmap_archive.json'), JSON.stringify(manifestData, null, 2));
-
-      log(LogLevel.Debug, `Storing ${manifestFilename}`);
-      await this.artifactStore.uploadArtifact(manifestFilename, join(dir, 'appmap_archive.json'));
+      await this.artifactStore.uploadArtifact(artifactName, archiveFile);
     }
 
     if (this.commit) {

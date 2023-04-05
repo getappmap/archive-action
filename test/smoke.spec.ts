@@ -54,20 +54,10 @@ describe('archive-appmap-action', () => {
     archiver.push = false;
     await archiver.archive();
 
-    expect([...artifactStore.artifacts.keys()].sort()).toEqual([
-      'appmap-archive-full_402dec8.json',
-      'appmap-archive-full_402dec8.tar.gz',
-    ]);
-    expect(artifactStore.artifacts.get('appmap-archive-full_402dec8.json')).toBe(
-      '.appmap/archive/full/appmap_archive.json'
+    expect([...artifactStore.artifacts.keys()].sort()).toEqual(['appmap-archive-full_402dec8.tar']);
+    expect(artifactStore.artifacts.get('appmap-archive-full_402dec8.tar')).toBe(
+      '.appmap/archive/full/402dec8.tar'
     );
-    expect(artifactStore.artifacts.get('appmap-archive-full_402dec8.tar.gz')).toBe(
-      '.appmap/archive/full/appmaps.tar.gz'
-    );
-    const metadata = JSON.parse(
-      await readFile(artifactStore.artifacts.get('appmap-archive-full_402dec8.json')!, 'utf8')
-    );
-    expect(metadata.github_artifact_name).toEqual('appmap-archive-full_402dec8.tar.gz');
   });
 
   it('assign the archive to an arbitrary revision', async () => {
@@ -77,9 +67,6 @@ describe('archive-appmap-action', () => {
     archiver.revision = 'foobar';
     await archiver.archive();
 
-    expect([...artifactStore.artifacts.keys()].sort()).toEqual([
-      'appmap-archive-full_foobar.json',
-      'appmap-archive-full_foobar.tar.gz',
-    ]);
+    expect([...artifactStore.artifacts.keys()].sort()).toEqual(['appmap-archive-full_foobar.tar']);
   });
 });
