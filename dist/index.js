@@ -39,7 +39,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const promises_1 = __nccwpck_require__(3292);
 const path_1 = __nccwpck_require__(1017);
 const executeCommand_1 = __nccwpck_require__(3285);
 const log_1 = __importStar(__nccwpck_require__(1285));
@@ -71,6 +70,13 @@ class Archiver {
             const archiveFiles = branchStatus
                 .map(status => status.split(' ')[1])
                 .filter(path => path.endsWith('.tar'));
+            if (archiveFiles.length === 0) {
+                (0, log_1.default)(log_1.LogLevel.Warn, `No AppMap archives found in ${process.cwd()}`);
+                return { branchStatus };
+            }
+            if (archiveFiles.length > 1) {
+                (0, log_1.default)(log_1.LogLevel.Warn, `Mulitple AppMap archives found in ${process.cwd()}`);
+            }
             for (const archiveFile of archiveFiles) {
                 (0, log_1.default)(log_1.LogLevel.Debug, `Processing AppMap archive ${archiveFile}`);
                 // e.g. .appmap/archive/full
@@ -78,21 +84,8 @@ class Archiver {
                 // e.g. appmap-archive-full
                 const artifactPrefix = dir.replace(/\//g, '-').replace(/\./g, '');
                 const [sha] = (0, path_1.basename)(archiveFile).split('.');
-                const manifestFilename = `${artifactPrefix}_${sha}.json`;
-                const appmapsFilename = `${artifactPrefix}_${sha}.tar.gz`;
-                // Extract the archive so that the individual files can be uploaded as artifacts.
-                // This way, a clien can cheaply download the manifest JSON file and decide
-                // whether to pull the AppMap tarball.
-                yield (0, executeCommand_1.executeCommand)(`tar xf ${archiveFile} -C ${dir}`);
-                // Upload the AppMaps tarball as e.g. appmap-archive-full_<sha>.tar.gz
-                (0, log_1.default)(log_1.LogLevel.Debug, `Storing ${appmapsFilename}`);
-                yield this.artifactStore.uploadArtifact(appmapsFilename, (0, path_1.join)(dir, 'appmaps.tar.gz'));
-                // Inject the GitHub artifact name into the manifest JSON file.
-                const manifestData = JSON.parse(yield (0, promises_1.readFile)((0, path_1.join)(dir, 'appmap_archive.json'), 'utf8'));
-                manifestData['github_artifact_name'] = appmapsFilename;
-                yield (0, promises_1.writeFile)((0, path_1.join)(dir, 'appmap_archive.json'), JSON.stringify(manifestData, null, 2));
-                (0, log_1.default)(log_1.LogLevel.Debug, `Storing ${manifestFilename}`);
-                yield this.artifactStore.uploadArtifact(manifestFilename, (0, path_1.join)(dir, 'appmap_archive.json'));
+                const artifactName = `${artifactPrefix}_${sha}.tar`;
+                yield this.artifactStore.uploadArtifact(artifactName, archiveFile);
             }
             if (this.commit) {
                 (0, log_1.default)(log_1.LogLevel.Info, `Committing artifact metadata to ${this.archiveBranch}`);
@@ -9895,14 +9888,6 @@ module.exports = require("events");
 
 "use strict";
 module.exports = require("fs");
-
-/***/ }),
-
-/***/ 3292:
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("fs/promises");
 
 /***/ }),
 
