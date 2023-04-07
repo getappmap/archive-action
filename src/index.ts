@@ -16,9 +16,10 @@ export interface ArchiveResults {
 
 async function runInGitHub(): Promise<ArchiveResults> {
   verbose(core.getBooleanInput('verbose'));
-  const commitSHA = core.getInput('commit-sha');
+  // commit-sha is there for backwards compatibility
+  const revision = core.getInput('revision') || core.getInput('commit-sha');
   const archiver = new Archiver(new GitHubArtifactStore());
-  if (commitSHA) archiver.revision = commitSHA;
+  if (revision) archiver.revision = revision;
   return archiver.archive();
 }
 
