@@ -49,7 +49,6 @@ describe('archive-appmap-action', () => {
     const archiver = new Archiver(artifactStore);
     archiver.toolsPath = './archive';
     archiver.archiveBranch = archiveBranch;
-    archiver.revision = false; // Disable revision auto-detection
     archiver.commit = true;
     archiver.push = false;
     await archiver.archive();

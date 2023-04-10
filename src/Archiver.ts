@@ -1,4 +1,5 @@
-import {readFile, rename, rm, writeFile} from 'fs/promises';
+import {existsSync} from 'fs';
+import {glob} from 'glob';
 import {basename, dirname, join} from 'path';
 import {executeCommand} from './executeCommand';
 import log, {LogLevel} from './log';
@@ -22,41 +23,37 @@ export default class Archiver {
 
   constructor(public artifactStore: ArtifactStore) {}
 
-  async archive(): Promise<{branchStatus: string[]}> {
+  async archive(): Promise<{archiveFile: string}> {
     log(LogLevel.Info, `Archiving AppMaps from ${process.cwd()}`);
 
-    const revision = this.revision === false ? undefined : this.revision || process.env.GITHUB_SHA;
+    const {revision} = this;
     let archiveCommand = `${this.toolsPath} archive`;
     if (revision) archiveCommand += ` --revision ${revision}`;
     await executeCommand(archiveCommand);
 
-    const branchStatus = (await executeCommand('git status -u -s -- .appmap')).trim().split('\n');
-    log(LogLevel.Debug, `Branch status is:\n${branchStatus}`);
-
-    const archiveFiles = branchStatus
-      .map(status => status.split(' ')[1])
-      .filter(path => path.endsWith('.tar'));
+    const archiveFiles = (
+      await glob(join('.appmap', 'archive', '**', '*.tar'), {dot: true})
+    ).filter(file => existsSync(file));
 
     if (archiveFiles.length === 0) {
-      log(LogLevel.Warn, `No AppMap archives found in ${process.cwd()}`);
-      return {branchStatus};
+      throw new Error(`No AppMap archives found in ${process.cwd()}`);
     }
     if (archiveFiles.length > 1) {
       log(LogLevel.Warn, `Mulitple AppMap archives found in ${process.cwd()}`);
     }
 
-    for (const archiveFile of archiveFiles) {
-      log(LogLevel.Debug, `Processing AppMap archive ${archiveFile}`);
+    const archiveFile = archiveFiles.pop()!;
 
-      // e.g. .appmap/archive/full
-      const dir = dirname(archiveFile);
-      // e.g. appmap-archive-full
-      const artifactPrefix = dir.replace(/\//g, '-').replace(/\./g, '');
-      const [sha] = basename(archiveFile).split('.');
-      const artifactName = `${artifactPrefix}_${sha}.tar`;
+    log(LogLevel.Debug, `Processing AppMap archive ${archiveFile}`);
 
-      await this.artifactStore.uploadArtifact(artifactName, archiveFile);
-    }
+    // e.g. .appmap/archive/full
+    const dir = dirname(archiveFile);
+    // e.g. appmap-archive-full
+    const artifactPrefix = dir.replace(/\//g, '-').replace(/\./g, '');
+    const [sha] = basename(archiveFile).split('.');
+    const artifactName = `${artifactPrefix}_${sha}.tar`;
+
+    await this.artifactStore.uploadArtifact(artifactName, archiveFile);
 
     if (this.commit) {
       log(LogLevel.Info, `Committing artifact metadata to ${this.archiveBranch}`);
@@ -86,6 +83,6 @@ export default class Archiver {
       await applyCommand(`git stash pop`);
     }
 
-    return {branchStatus};
+    return {archiveFile};
   }
 }
