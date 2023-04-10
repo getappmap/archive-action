@@ -11,14 +11,16 @@ class GitHubArtifactStore implements ArtifactStore {
 }
 
 export interface ArchiveResults {
-  branchStatus: string[];
+  archiveFile: string;
 }
 
 async function runInGitHub(): Promise<ArchiveResults> {
   verbose(core.getBooleanInput('verbose'));
-  const commitSHA = core.getInput('commit-sha');
+  // commit-sha is checked for backwards compatibility
+  const revision =
+    core.getInput('revision') || core.getInput('commit-sha') || process.env.GITHUB_SHA;
   const archiver = new Archiver(new GitHubArtifactStore());
-  if (commitSHA) archiver.revision = commitSHA;
+  if (revision) archiver.revision = revision;
   return archiver.archive();
 }
 

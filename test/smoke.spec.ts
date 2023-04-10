@@ -26,7 +26,10 @@ describe('archive-appmap-action', () => {
 
   const checkoutBranch = async () => {
     archiveBranch = randomUUID();
-    currentBranch = await executeCommand('git rev-parse --abbrev-ref HEAD');
+    currentBranch = (await executeCommand('git rev-parse --abbrev-ref HEAD')).trim();
+    // In a GitHub PR
+    if (currentBranch === 'HEAD')
+      currentBranch = (await executeCommand('git rev-parse HEAD')).trim();
 
     await executeCommand(`git checkout -b ${archiveBranch}`);
     await executeCommand(`git checkout ${currentBranch}`);
@@ -49,7 +52,6 @@ describe('archive-appmap-action', () => {
     const archiver = new Archiver(artifactStore);
     archiver.toolsPath = './archive';
     archiver.archiveBranch = archiveBranch;
-    archiver.revision = false; // Disable revision auto-detection
     archiver.commit = true;
     archiver.push = false;
     await archiver.archive();
