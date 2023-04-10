@@ -7,7 +7,7 @@ inputs:
       out and run - it just specifies what commit the built archive is associated with. Using this variable,
       you can make a branch off an existing commit, build an archive on that branch, and assign it to the
       original commit that you branched from, thereby adding an AppMap archive for a historical revision.
-      In a pull request action, use `revision: ${{ github.event.pull_request.head.sha }}`.
+      In a pull request action, use `github.event.pull_request.head.sha`.
   verbose:
     description: Enable verbose logging.
     default: false
