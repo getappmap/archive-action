@@ -1,12 +1,14 @@
-on: [push]
+name: CI
+
+on:
+  pull_request:
 
 env:
   APPMAP_TELEMETRY_DISABLED: 'true'
 
 jobs:
-  ci:
+  main:
     runs-on: ubuntu-latest
-    name: Build, test and package
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -16,9 +18,9 @@ jobs:
         run: yarn build
       - name: Test
         run: yarn test
-      - name: Package
+      - name: Build GitHub action
         run: yarn package
-      - name: Commit package changes, if any
+      - name: Commit changes
         # If you forgot to package the distribution, you'll see a commit added to your PR
         uses: EndBug/add-and-commit@v7
         with:
