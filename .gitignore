@@ -13,3 +13,7 @@ patch
 
 # AppMap archive
 test/fixture/.appmap/archive/full/402dec8.tar
+
+
+# Ignore AppMap archives and working files
+/.appmap
