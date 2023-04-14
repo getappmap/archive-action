@@ -72,7 +72,7 @@ class Archiver {
                 throw new Error(`No AppMap archives found in ${process.cwd()}`);
             }
             if (archiveFiles.length > 1) {
-                (0, log_1.default)(log_1.LogLevel.Warn, `Mulitple AppMap archives found in ${process.cwd()}`);
+                (0, log_1.default)(log_1.LogLevel.Warn, `Multiple AppMap archives found in ${process.cwd()}`);
             }
             const archiveFile = archiveFiles.pop();
             (0, log_1.default)(log_1.LogLevel.Debug, `Processing AppMap archive ${archiveFile}`);
