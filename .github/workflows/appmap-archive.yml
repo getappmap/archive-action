@@ -24,6 +24,7 @@ jobs:
         uses: getappmap/install-appmap-action@v1-pre.6
         id: install-appmap
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           verbose: true
       - name: Build AppMaps
         run: yarn appmap
