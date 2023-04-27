@@ -1,8 +1,7 @@
-import {existsSync} from 'fs';
-import {glob} from 'glob';
-import {basename, dirname, join} from 'path';
+import {basename, dirname} from 'path';
 import {executeCommand} from './executeCommand';
 import log, {LogLevel} from './log';
+import {locateArchiveFile} from './locateArchiveFile';
 
 export interface ArtifactStore {
   uploadArtifact(name: string, path: string): Promise<void>;
@@ -31,18 +30,7 @@ export default class Archiver {
     if (revision) archiveCommand += ` --revision ${revision}`;
     await executeCommand(archiveCommand);
 
-    const archiveFiles = (
-      await glob(join('.appmap', 'archive', '**', '*.tar'), {dot: true})
-    ).filter(file => existsSync(file));
-
-    if (archiveFiles.length === 0) {
-      throw new Error(`No AppMap archives found in ${process.cwd()}`);
-    }
-    if (archiveFiles.length > 1) {
-      log(LogLevel.Warn, `Multiple AppMap archives found in ${process.cwd()}`);
-    }
-
-    const archiveFile = archiveFiles.pop()!;
+    const archiveFile = await locateArchiveFile('.');
 
     log(LogLevel.Debug, `Processing AppMap archive ${archiveFile}`);
 
