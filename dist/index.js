@@ -39,11 +39,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const fs_1 = __nccwpck_require__(7147);
-const glob_1 = __nccwpck_require__(5029);
 const path_1 = __nccwpck_require__(1017);
 const executeCommand_1 = __nccwpck_require__(3285);
 const log_1 = __importStar(__nccwpck_require__(1285));
+const locateArchiveFile_1 = __nccwpck_require__(1767);
 function applyCommand(command) {
     return __awaiter(this, void 0, void 0, function* () {
         if (!command)
@@ -67,14 +66,7 @@ class Archiver {
             if (revision)
                 archiveCommand += ` --revision ${revision}`;
             yield (0, executeCommand_1.executeCommand)(archiveCommand);
-            const archiveFiles = (yield (0, glob_1.glob)((0, path_1.join)('.appmap', 'archive', '**', '*.tar'), { dot: true })).filter(file => (0, fs_1.existsSync)(file));
-            if (archiveFiles.length === 0) {
-                throw new Error(`No AppMap archives found in ${process.cwd()}`);
-            }
-            if (archiveFiles.length > 1) {
-                (0, log_1.default)(log_1.LogLevel.Warn, `Multiple AppMap archives found in ${process.cwd()}`);
-            }
-            const archiveFile = archiveFiles.pop();
+            const archiveFile = yield (0, locateArchiveFile_1.locateArchiveFile)('.');
             (0, log_1.default)(log_1.LogLevel.Debug, `Processing AppMap archive ${archiveFile}`);
             // e.g. .appmap/archive/full
             const dir = (0, path_1.dirname)(archiveFile);
@@ -171,8 +163,10 @@ function executeCommand(cmd, printCommand = (0, verbose_1.default)(), printStdou
         });
     }
     return new Promise((resolve, reject) => {
-        command.addListener('exit', code => {
-            if (code === 0) {
+        command.addListener('exit', (code, signal) => {
+            if (signal || code === 0) {
+                if (signal)
+                    (0, log_1.default)(log_1.LogLevel.Info, `Command killed by signal ${signal}`);
                 resolve(result.join(''));
             }
             else {
@@ -257,6 +251,70 @@ function runInGitHub() {
 if (require.main === require.cache[eval('__filename')]) {
     runInGitHub();
 }
+
+
+/***/ }),
+
+/***/ 1767:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.locateArchiveFile = void 0;
+const fs_1 = __nccwpck_require__(7147);
+const glob_1 = __nccwpck_require__(5029);
+const path_1 = __nccwpck_require__(1017);
+const log_1 = __importStar(__nccwpck_require__(1285));
+const promises_1 = __nccwpck_require__(3292);
+function locateArchiveFile(workDir) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const archiveFiles = (yield (0, glob_1.glob)((0, path_1.join)(workDir, '.appmap', 'archive', '**', '*.tar'), { dot: true })).filter(file => (0, fs_1.existsSync)(file));
+        const archiveFileTimes = new Map();
+        yield Promise.all(archiveFiles.map((file) => __awaiter(this, void 0, void 0, function* () { return archiveFileTimes.set(file, (yield (0, promises_1.stat)(file)).mtimeMs); })));
+        archiveFiles.sort((a, b) => archiveFileTimes.get(b) - archiveFileTimes.get(a));
+        if (archiveFiles.length === 0)
+            throw new Error(`No AppMap archives found in ${(0, path_1.join)(process.cwd(), workDir)}`);
+        const result = archiveFiles.shift();
+        if (archiveFiles.length > 1) {
+            (0, log_1.default)(log_1.LogLevel.Warn, `Multiple AppMap archives found in ${(0, path_1.join)(process.cwd(), workDir)}.\nI'll upload the most recent one, which is ${result}.`);
+        }
+        return result;
+    });
+}
+exports.locateArchiveFile = locateArchiveFile;
 
 
 /***/ }),
