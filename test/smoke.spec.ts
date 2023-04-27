@@ -1,15 +1,8 @@
 import {randomUUID} from 'crypto';
 import Archiver, {ArtifactStore} from '../src/Archiver';
 import {executeCommand} from '../src/executeCommand';
-import {cp, readFile, rm} from 'fs/promises';
-import {join} from 'path';
-import verbose from '../src/verbose';
-
-const pwd = process.cwd();
-const fixtureDir = join(__dirname, 'fixture');
-const workDir = join(__dirname, 'work');
-
-if (process.env.VERBOSE) verbose(true);
+import * as test from './helper';
+import {cp, rm} from 'fs/promises';
 
 class MockArtifactStore implements ArtifactStore {
   public artifacts = new Map<string, string>();
@@ -39,14 +32,17 @@ describe('archive-appmap-action', () => {
     await executeCommand(`git checkout ${currentBranch}`);
     await executeCommand(`git branch -D ${archiveBranch}`);
   };
+  let workDir: string;
 
   beforeEach(() => (artifactStore = new MockArtifactStore()));
-  beforeEach(async () => cp(fixtureDir, workDir, {recursive: true, force: true}));
+  beforeEach(() => (workDir = test.makeWorkDir()));
+  beforeEach(() => cp(test.fixtureDir, workDir, {recursive: true, force: true}));
   beforeEach(() => process.chdir(workDir));
   beforeEach(checkoutBranch);
+
   afterEach(cleanupBranch);
-  afterEach(() => process.chdir(pwd));
-  afterEach(async () => rm(workDir, {recursive: true, force: true}));
+  afterEach(() => process.chdir(test.pwd));
+  afterEach(() => rm(workDir, {recursive: true, force: true}));
 
   it('build and store an AppMap archive', async () => {
     const archiver = new Archiver(artifactStore);
