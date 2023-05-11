@@ -1,5 +1,5 @@
 import {cp, mkdir, rm, writeFile} from 'fs/promises';
-import {locateArchiveFile} from '../src/locateArchiveFile';
+import locateArchiveFile from '../src/locateArchiveFile';
 import * as test from './helper';
 import {join} from 'path';
 

@@ -5,12 +5,13 @@
   "license": "MIT",
   "main": "build/index.js",
   "scripts": {
-    "build": "tsc",
-    "test": "jest --runInBand",
+    "compile": "tsc",
+    "package": "ncc build -o dist/archive --source-map src/archive.ts && ncc build -o dist/merge --source-map src/merge.ts",
+    "build": "yarn compile && yarn package",
+    "test": "tsc --noEmit && jest --runInBand",
     "appmap": "appmap-agent-js -- jest --no-cache --runInBand",
     "clean": "rm -rf build dist tmp",
-    "format": "prettier --write '**/*.ts'",
-    "package": "ncc build --source-map --license licenses.txt"
+    "format": "prettier --write '**/*.ts'"
   },
   "devDependencies": {
     "@appland/appmap-agent-js": "^13.7.0",
@@ -27,6 +28,7 @@
   },
   "dependencies": {
     "@actions/artifact": "^1.1.1",
+    "@actions/cache": "^3.2.1",
     "@actions/core": "^1.10.0",
     "@actions/github": "^5.1.1"
   },

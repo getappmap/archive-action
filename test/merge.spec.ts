@@ -1,8 +1,12 @@
 import {randomUUID} from 'crypto';
-import Archiver, {ArtifactStore} from '../src/Archiver';
+import ArtifactStore from '../src/ArtifactStore';
+import {Archive} from '../src/archive';
 import {executeCommand} from '../src/executeCommand';
+import * as locateArchiveFile from '../src/locateArchiveFile';
 import * as test from './helper';
 import {cp, rm} from 'fs/promises';
+import CacheStore from '../src/CacheStore';
+import ArchiveCommand, {ArchiveOptions} from '../src/ArchiveCommand';
 
 class MockArtifactStore implements ArtifactStore {
   public artifacts = new Map<string, string>();
@@ -12,8 +16,27 @@ class MockArtifactStore implements ArtifactStore {
   }
 }
 
+class NoCacheStore implements CacheStore {
+  save(paths: string[], key: string): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+  restore(paths: string[], key: string): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+}
+
+class MockArchiveCommand implements ArchiveCommand {
+  public commands: ArchiveOptions[] = [];
+
+  async archive(options?: ArchiveOptions | undefined): Promise<void> {
+    this.commands.push(options || {});
+  }
+}
+
 describe('archive-appmap-action', () => {
   let artifactStore: MockArtifactStore;
+  let noCacheStore: NoCacheStore;
+  let archiveCommand: MockArchiveCommand;
   let archiveBranch: string;
   let currentBranch: string;
 
@@ -33,24 +56,35 @@ describe('archive-appmap-action', () => {
     await executeCommand(`git branch -D ${archiveBranch}`);
   };
   let workDir: string;
+  let action: Archive;
 
   beforeEach(() => (artifactStore = new MockArtifactStore()));
+  beforeEach(() => (noCacheStore = new NoCacheStore()));
   beforeEach(() => (workDir = test.makeWorkDir()));
+  beforeEach(() => (archiveCommand = new MockArchiveCommand()));
   beforeEach(() => cp(test.fixtureDir, workDir, {recursive: true, force: true}));
   beforeEach(() => process.chdir(workDir));
+  beforeEach(() => {
+    action = new Archive();
+    action.artifactStore = artifactStore;
+    action.cacheStore = noCacheStore;
+    action.archiveCommand = archiveCommand;
+    action.jobAttemptId = 1;
+    action.jobRunId = 1;
+  });
   beforeEach(checkoutBranch);
 
   afterEach(cleanupBranch);
   afterEach(() => process.chdir(test.pwd));
   afterEach(() => rm(workDir, {recursive: true, force: true}));
+  afterEach(() => jest.clearAllMocks());
+  afterEach(() => jest.restoreAllMocks());
+  afterEach(() => jest.resetAllMocks());
 
   it('build and store an AppMap archive', async () => {
-    const archiver = new Archiver(artifactStore);
-    archiver.toolsPath = './archive';
-    archiver.archiveBranch = archiveBranch;
-    archiver.commit = true;
-    archiver.push = false;
-    await archiver.archive();
+    jest.spyOn(locateArchiveFile, 'default').mockResolvedValue('.appmap/archive/full/402dec8.tar');
+
+    await action.archive();
 
     expect([...artifactStore.artifacts.keys()].sort()).toEqual(['appmap-archive-full_402dec8.tar']);
     expect(artifactStore.artifacts.get('appmap-archive-full_402dec8.tar')).toBe(
@@ -59,11 +93,10 @@ describe('archive-appmap-action', () => {
   });
 
   it('assign the archive to an arbitrary revision', async () => {
-    const archiver = new Archiver(artifactStore);
-    archiver.toolsPath = './archive';
-    archiver.archiveBranch = archiveBranch;
-    archiver.revision = 'foobar';
-    await archiver.archive();
+    jest.spyOn(locateArchiveFile, 'default').mockResolvedValue('.appmap/archive/full/foobar.tar');
+
+    action.revision = 'foobar';
+    await action.archive();
 
     expect([...artifactStore.artifacts.keys()].sort()).toEqual(['appmap-archive-full_foobar.tar']);
   });

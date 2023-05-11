@@ -7,7 +7,7 @@ env:
   APPMAP_TELEMETRY_DISABLED: 'true'
 
 jobs:
-  main:
+  preflight:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -30,7 +30,7 @@ jobs:
           add: .
           message: 'chore: Update AppMap installation'
       - name: Build
-        run: yarn build
+        run: yarn package
       - name: Make AppMaps
         run: yarn appmap || true
       - name: Preflight
