@@ -9,7 +9,7 @@ describe('locateArchiveFile', () => {
   let workDir: string;
 
   beforeEach(() => (workDir = test.makeWorkDir()));
-  beforeEach(() => cp(test.fixtureDir, workDir, {recursive: true, force: true}));
+  beforeEach(() => cp(test.FixtureDir, workDir, {recursive: true, force: true}));
   afterEach(() => rm(workDir, {recursive: true, force: true}));
 
   it(`errors if there's no archive`, async () => {

@@ -2,9 +2,8 @@ name: Merge and save AppMap archives from a matrix job
 inputs:
   directory:
     description: Command working directory.
-  worker-count:
-    description: Number of matrix jobs to merge.
-    type: number
+  archive-count:
+    description: Number of archive files to merge.
     required: true
   revision:
     description: |

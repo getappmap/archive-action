@@ -4,71 +4,76 @@ import {mkdir, readFile, rm} from 'fs/promises';
 import {executeCommand} from './executeCommand';
 import locateArchiveFile from './locateArchiveFile';
 import ArchiveAction from './ArchiveAction';
-import {glob} from 'glob';
 import log, {LogLevel} from './log';
 import ArchiveResults from './ArchiveResults';
 import {ArchiveOptions} from './ArchiveCommand';
-import verbose from './verbose';
+import {existsSync} from 'fs';
+import {glob} from 'glob';
 
 export class Merge extends ArchiveAction {
-  constructor(public matrixCount: number) {
+  constructor(public archiveCount: number) {
     super();
   }
 
   async merge(): Promise<ArchiveResults> {
+    log(LogLevel.Debug, `revision: ${this.revision}`);
     log(LogLevel.Debug, `jobRunId: ${this.jobRunId}`);
     log(LogLevel.Debug, `jobAttemptId: ${this.jobAttemptId}`);
-
-    const archiveOptions: ArchiveOptions = {revision: this.revision};
+    log(LogLevel.Debug, `archiveCount: ${this.archiveCount}`);
 
     assert(this.jobRunId, 'run number (GITHUB_RUN_ID) is not set');
     assert(this.jobAttemptId, 'attempt number (GITHUB_RUN_ATTEMPT) is not set');
 
-    const key = ArchiveAction.cacheKey(this.jobRunId, this.jobAttemptId);
+    for (const worker of Array.from({length: this.archiveCount}, (_, i) => i)) {
+      const key = ArchiveAction.cacheKey(this.jobRunId, this.jobAttemptId, worker);
+      log(LogLevel.Info, `Restoring AppMap archive ./appmap/archive using cache key ${key}`);
+      await this.cacheStore.restore(['.appmap/archive'], key);
 
-    const paths = Array.from({length: this.matrixCount}, (_, i) => i).map(
-      i => `.appmap/archive/full/appmap_archive_${i}.tar`
-    );
-    await this.cacheStore.restore(paths, key);
-
-    const archiveFiles = await glob('.appmap/archive/full/*.tar', {dot: true});
-
-    if (archiveFiles.length === this.matrixCount) {
-      throw new Error(
-        `Expecting to find ${this.matrixCount} archive files, but found ${archiveFiles.length}`
-      );
-    }
-
-    let appmapDir: string | undefined;
-    await mkdir('tmp/appmap', {recursive: true});
-    for (const archiveFile of archiveFiles) {
-      await executeCommand(`tar -xf ${archiveFile} -C tmp/appmap`);
-
-      if (!appmapDir) {
-        const archiveMetadata = JSON.parse(await readFile('tmp/appmap_archive.json', 'utf-8'));
-        appmapDir = (archiveMetadata.config.appmapDir || 'tmp/appmap') as string;
-        await mkdir(appmapDir, {recursive: true});
+      const filePaths = await glob('.appmap/archive/**/*.tar');
+      if (filePaths.length === 0) {
+        throw new Error(`No AppMap archives found in .appmap/archive using cache key ${key}`);
+      }
+      if (filePaths.length !== 1) {
+        log(LogLevel.Warn, `Expected exactly one AppMap archive, found ${filePaths.length}`);
       }
 
-      await executeCommand(`tar -xf tmp/appmap/appmaps.tar.gz -C ${appmapDir}`);
-      await rm('tmp/appmap/appmap_archive.json');
-      await rm('tmp/appmap/appmaps.tar.gz');
+      for (const filePath of filePaths) {
+        await this.unpackArchive(filePath);
+      }
     }
-    archiveOptions.index = false;
 
+    const archiveOptions: ArchiveOptions = {revision: this.revision, index: false};
     await this.archiveCommand.archive(archiveOptions);
 
     const archiveFile = await locateArchiveFile('.');
 
     return await this.uploadArtifact(archiveFile);
   }
+
+  async unpackArchive(archiveFile: string) {
+    let appmapDir: string | undefined;
+    await mkdir('tmp/appmap', {recursive: true});
+
+    await executeCommand(`tar -xf ${archiveFile} -C tmp/appmap`);
+
+    if (!appmapDir) {
+      const archiveMetadata = JSON.parse(await readFile('tmp/appmap/appmap_archive.json', 'utf-8'));
+      appmapDir = (archiveMetadata.config.appmapDir || 'tmp/appmap') as string;
+      await mkdir(appmapDir, {recursive: true});
+    }
+
+    await executeCommand(`tar -xzf tmp/appmap/appmaps.tar.gz -C ${appmapDir}`);
+    await rm('tmp/appmap/appmap_archive.json');
+    await rm('tmp/appmap/appmaps.tar.gz');
+    await rm(archiveFile);
+  }
 }
 
 if (require.main === module) {
-  const workerCount = core.getInput('worker-count');
-  assert(workerCount, 'worker-count is not set');
+  const archiveCount = core.getInput('archive-count');
+  assert(archiveCount, 'archive-count is not set');
 
-  const action = new Merge(parseInt(workerCount, 100));
+  const action = new Merge(parseInt(archiveCount, 10));
   ArchiveAction.prepareAction(action);
 
   action.merge();

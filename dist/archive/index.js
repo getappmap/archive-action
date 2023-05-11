@@ -68187,27 +68187,28 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ArchiveAction = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const path_1 = __nccwpck_require__(1017);
 const log_1 = __importStar(__nccwpck_require__(5042));
-const GitHubArtifactStore_1 = __nccwpck_require__(2427);
-const GitHubCacheStore_1 = __nccwpck_require__(7418);
-const CLIArchiveCommand_1 = __nccwpck_require__(8634);
+const GitHubArtifactStore_1 = __importDefault(__nccwpck_require__(2427));
+const GitHubCacheStore_1 = __importDefault(__nccwpck_require__(7418));
+const CLIArchiveCommand_1 = __importDefault(__nccwpck_require__(8634));
 const verbose_1 = __importDefault(__nccwpck_require__(2472));
 class ArchiveAction {
     constructor() {
         this.jobRunId = process.env.GITHUB_RUN_ID;
         this.jobAttemptId = process.env.GITHUB_RUN_ATTEMPT;
-        this.artifactStore = new GitHubArtifactStore_1.GitHubArtifactStore();
-        this.cacheStore = new GitHubCacheStore_1.GitHubCacheStore();
-        this.archiveCommand = new CLIArchiveCommand_1.CLIArchiveCommand();
+        this.artifactStore = new GitHubArtifactStore_1.default();
+        this.cacheStore = new GitHubCacheStore_1.default();
+        this.archiveCommand = new CLIArchiveCommand_1.default();
     }
     static cacheKey(jobRunId, jobAttemptId, workerId) {
-        const tokens = ['appmap-archive', `run_${jobRunId}`, `attempt_${jobAttemptId}`];
-        if (workerId)
-            tokens.push(`worker_${workerId}`);
-        return tokens.join('-');
+        return [
+            'appmap-archive',
+            `run_${jobRunId}`,
+            `attempt_${jobAttemptId}`,
+            `worker_${workerId}`,
+        ].join('-');
     }
     static prepareAction(action) {
         (0, verbose_1.default)(core.getBooleanInput('verbose'));
@@ -68240,7 +68241,7 @@ class ArchiveAction {
         });
     }
 }
-exports.ArchiveAction = ArchiveAction;
+exports["default"] = ArchiveAction;
 
 
 /***/ }),
@@ -68260,7 +68261,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.CLIArchiveCommand = void 0;
 const executeCommand_1 = __nccwpck_require__(8659);
 class CLIArchiveCommand {
     constructor() {
@@ -68277,7 +68277,7 @@ class CLIArchiveCommand {
         });
     }
 }
-exports.CLIArchiveCommand = CLIArchiveCommand;
+exports["default"] = CLIArchiveCommand;
 
 
 /***/ }),
@@ -68320,7 +68320,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.GitHubArtifactStore = void 0;
 const artifact = __importStar(__nccwpck_require__(2605));
 class GitHubArtifactStore {
     uploadArtifact(name, path) {
@@ -68330,7 +68329,7 @@ class GitHubArtifactStore {
         });
     }
 }
-exports.GitHubArtifactStore = GitHubArtifactStore;
+exports["default"] = GitHubArtifactStore;
 
 
 /***/ }),
@@ -68373,9 +68372,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.GitHubCacheStore = void 0;
 const cache = __importStar(__nccwpck_require__(7799));
+const promises_1 = __nccwpck_require__(3292);
 class GitHubCacheStore {
+    rename(from, to) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield (0, promises_1.rename)(from, to);
+        });
+    }
     save(paths, key) {
         return __awaiter(this, void 0, void 0, function* () {
             yield cache.saveCache(paths, key);
@@ -68387,7 +68391,7 @@ class GitHubCacheStore {
         });
     }
 }
-exports.GitHubCacheStore = GitHubCacheStore;
+exports["default"] = GitHubCacheStore;
 
 
 /***/ }),
@@ -68436,10 +68440,11 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Archive = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const assert_1 = __importDefault(__nccwpck_require__(9491));
-const ArchiveAction_1 = __nccwpck_require__(6335);
-const locateArchiveFile_1 = __nccwpck_require__(5176);
+const ArchiveAction_1 = __importDefault(__nccwpck_require__(6335));
+const locateArchiveFile_1 = __importDefault(__nccwpck_require__(5176));
 const log_1 = __importStar(__nccwpck_require__(5042));
-class Archive extends ArchiveAction_1.ArchiveAction {
+const path_1 = __nccwpck_require__(1017);
+class Archive extends ArchiveAction_1.default {
     archive() {
         return __awaiter(this, void 0, void 0, function* () {
             (0, log_1.default)(log_1.LogLevel.Debug, `revision: ${this.revision}`);
@@ -68448,13 +68453,15 @@ class Archive extends ArchiveAction_1.ArchiveAction {
             (0, log_1.default)(log_1.LogLevel.Debug, `workerId: ${this.workerId}`);
             const archiveOptions = { revision: this.revision };
             yield this.archiveCommand.archive(archiveOptions);
-            const archiveFile = yield (0, locateArchiveFile_1.locateArchiveFile)('.');
+            const archiveFile = yield (0, locateArchiveFile_1.default)('.');
             if (this.workerId) {
+                const cacheFileName = (0, path_1.join)((0, path_1.dirname)(archiveFile), [this.workerId, 'tar'].join('.'));
+                yield this.cacheStore.rename(archiveFile, cacheFileName);
                 (0, assert_1.default)(this.jobRunId, 'run number (GITHUB_RUN_ID) is not set');
                 (0, assert_1.default)(this.jobAttemptId, 'attempt number (GITHUB_RUN_ATTEMPT) is not set');
-                const key = ArchiveAction_1.ArchiveAction.cacheKey(this.jobRunId, this.jobAttemptId, this.workerId);
-                (0, log_1.default)(log_1.LogLevel.Info, `Caching AppMap archive ${archiveFile} as ${key}`);
-                yield this.cacheStore.save([archiveFile], key);
+                const key = ArchiveAction_1.default.cacheKey(this.jobRunId, this.jobAttemptId, this.workerId);
+                (0, log_1.default)(log_1.LogLevel.Info, `Caching AppMap archive ${cacheFileName} as ${key}`);
+                yield this.cacheStore.save(['.appmap/archive'], key);
             }
             else {
                 (0, log_1.default)(log_1.LogLevel.Info, `Uploading archive ${archiveFile}`);
@@ -68467,7 +68474,7 @@ class Archive extends ArchiveAction_1.ArchiveAction {
 exports.Archive = Archive;
 if (require.main === require.cache[eval('__filename')]) {
     const action = new Archive();
-    ArchiveAction_1.ArchiveAction.prepareAction(action);
+    ArchiveAction_1.default.prepareAction(action);
     const workerId = core.getInput('worker-id');
     if (workerId)
         action.workerId = workerId;
@@ -68593,7 +68600,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.locateArchiveFile = void 0;
 const fs_1 = __nccwpck_require__(7147);
 const glob_1 = __nccwpck_require__(5029);
 const path_1 = __nccwpck_require__(1017);
@@ -68615,7 +68621,7 @@ function locateArchiveFile(workDir) {
         return result;
     });
 }
-exports.locateArchiveFile = locateArchiveFile;
+exports["default"] = locateArchiveFile;
 
 
 /***/ }),

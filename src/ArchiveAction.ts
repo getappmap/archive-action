@@ -21,11 +21,14 @@ export default abstract class ArchiveAction {
   static cacheKey(
     jobRunId: string | number,
     jobAttemptId: string | number,
-    workerId?: string | number
+    workerId: string | number
   ): string {
-    const tokens = ['appmap-archive', `run_${jobRunId}`, `attempt_${jobAttemptId}`];
-    if (workerId) tokens.push(`worker_${workerId}`);
-    return tokens.join('-');
+    return [
+      'appmap-archive',
+      `run_${jobRunId}`,
+      `attempt_${jobAttemptId}`,
+      `worker_${workerId}`,
+    ].join('-');
   }
 
   static prepareAction(action: ArchiveAction) {

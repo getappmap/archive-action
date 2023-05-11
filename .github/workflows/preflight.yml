@@ -33,7 +33,7 @@ jobs:
       - name: Make AppMaps
         run: yarn appmap || true
       - name: Preflight
-        uses: getappmap/preflight-appmap-action@v1-pre.7
+        uses: getappmap/preflight-appmap-action@v1-pre.8
         with:
           base-revision: origin/main
           head-revision: ${{ github.event.pull_request.head.sha }}
