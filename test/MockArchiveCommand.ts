@@ -1,9 +1,13 @@
-import ArchiveCommand, {ArchiveOptions} from '../src/ArchiveCommand';
+import ArchiveCommand, {ArchiveOptions, RestoreOptions} from '../src/ArchiveCommand';
 
 export class MockArchiveCommand implements ArchiveCommand {
-  public commands: ArchiveOptions[] = [];
+  public commands: {command: string; options: any}[] = [];
 
-  async archive(options?: ArchiveOptions | undefined): Promise<void> {
-    this.commands.push(options || {});
+  async archive(options: ArchiveOptions): Promise<void> {
+    this.commands.push({command: 'archive', options});
+  }
+
+  async restore(options: RestoreOptions): Promise<void> {
+    this.commands.push({command: 'restore', options});
   }
 }

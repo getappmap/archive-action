@@ -38,17 +38,12 @@ export default abstract class ArchiveAction {
     // commit-sha is checked for backwards compatibility
     const revision =
       core.getInput('revision') || core.getInput('commit-sha') || process.env.GITHUB_SHA;
+
     if (directory) {
       log(LogLevel.Info, `Changing to working directory ${directory}`);
       process.chdir(directory);
     }
-
     if (revision) action.revision = revision;
-    if (process.env.ACT === 'true') {
-      log(LogLevel.Info, `Running in ACT mode. Setting runId = 1, attemptId = 1`);
-      action.jobRunId = 1;
-      action.jobAttemptId = 1;
-    }
   }
 
   protected async uploadArtifact(archiveFile: string): Promise<{archiveFile: string}> {

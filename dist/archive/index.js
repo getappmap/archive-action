@@ -68221,11 +68221,6 @@ class ArchiveAction {
         }
         if (revision)
             action.revision = revision;
-        if (process.env.ACT === 'true') {
-            (0, log_1.default)(log_1.LogLevel.Info, `Running in ACT mode. Setting runId = 1, attemptId = 1`);
-            action.jobRunId = 1;
-            action.jobAttemptId = 1;
-        }
     }
     uploadArtifact(archiveFile) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -68260,20 +68255,38 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const executeCommand_1 = __nccwpck_require__(8659);
+const verbose_1 = __importDefault(__nccwpck_require__(2472));
 class CLIArchiveCommand {
     constructor() {
         this.toolsCommand = 'appmap';
     }
     archive(options) {
         return __awaiter(this, void 0, void 0, function* () {
-            let archiveCommand = `${this.toolsCommand} archive`;
+            let command = `${this.toolsCommand} archive`;
+            if ((0, verbose_1.default)())
+                command += ' --verbose';
             if (options.index === false)
-                archiveCommand += ' --no-index';
+                command += ' --no-index';
             if (options.revision)
-                archiveCommand += ` --revision ${options.revision}`;
-            yield (0, executeCommand_1.executeCommand)(archiveCommand);
+                command += ` --revision ${options.revision}`;
+            yield (0, executeCommand_1.executeCommand)(command);
+        });
+    }
+    restore(options) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let command = `${this.toolsCommand} restore`;
+            if ((0, verbose_1.default)())
+                command += ' --verbose';
+            if (options.revision)
+                command += ` --revision ${options.revision}`;
+            if (options.exact)
+                command += ' --exact';
+            yield (0, executeCommand_1.executeCommand)(command);
         });
     }
 }
@@ -68443,25 +68456,29 @@ const assert_1 = __importDefault(__nccwpck_require__(9491));
 const ArchiveAction_1 = __importDefault(__nccwpck_require__(6335));
 const locateArchiveFile_1 = __importDefault(__nccwpck_require__(5176));
 const log_1 = __importStar(__nccwpck_require__(5042));
-const path_1 = __nccwpck_require__(1017);
 class Archive extends ArchiveAction_1.default {
     archive() {
         return __awaiter(this, void 0, void 0, function* () {
             (0, log_1.default)(log_1.LogLevel.Debug, `revision: ${this.revision}`);
             (0, log_1.default)(log_1.LogLevel.Debug, `jobRunId: ${this.jobRunId}`);
             (0, log_1.default)(log_1.LogLevel.Debug, `jobAttemptId: ${this.jobAttemptId}`);
-            (0, log_1.default)(log_1.LogLevel.Debug, `workerId: ${this.workerId}`);
-            const archiveOptions = { revision: this.revision };
+            (0, log_1.default)(log_1.LogLevel.Debug, `archiveId: ${this.archiveId}`);
+            if (this.archiveId && this.revision) {
+                (0, log_1.default)(log_1.LogLevel.Warn, `Ignoring revision option ${this.revision} because archiveId is set`);
+                this.revision = undefined;
+            }
+            const archiveOptions = {};
+            const revision = this.archiveId ? this.archiveId.toString() : this.revision;
+            if (revision)
+                archiveOptions.revision = revision;
             yield this.archiveCommand.archive(archiveOptions);
             const archiveFile = yield (0, locateArchiveFile_1.default)('.');
-            if (this.workerId) {
-                const cacheFileName = (0, path_1.join)((0, path_1.dirname)(archiveFile), [this.workerId, 'tar'].join('.'));
-                yield this.cacheStore.rename(archiveFile, cacheFileName);
+            if (this.archiveId) {
                 (0, assert_1.default)(this.jobRunId, 'run number (GITHUB_RUN_ID) is not set');
                 (0, assert_1.default)(this.jobAttemptId, 'attempt number (GITHUB_RUN_ATTEMPT) is not set');
-                const key = ArchiveAction_1.default.cacheKey(this.jobRunId, this.jobAttemptId, this.workerId);
-                (0, log_1.default)(log_1.LogLevel.Info, `Caching AppMap archive ${cacheFileName} as ${key}`);
-                yield this.cacheStore.save(['.appmap/archive'], key);
+                const key = ArchiveAction_1.default.cacheKey(this.jobRunId, this.jobAttemptId, this.archiveId);
+                (0, log_1.default)(log_1.LogLevel.Info, `Caching AppMap archive ${archiveFile} as ${key}`);
+                yield this.cacheStore.save([archiveFile], key);
             }
             else {
                 (0, log_1.default)(log_1.LogLevel.Info, `Uploading archive ${archiveFile}`);
@@ -68475,9 +68492,9 @@ exports.Archive = Archive;
 if (require.main === require.cache[eval('__filename')]) {
     const action = new Archive();
     ArchiveAction_1.default.prepareAction(action);
-    const workerId = core.getInput('worker-id');
-    if (workerId)
-        action.workerId = workerId;
+    const archiveId = core.getInput('archive-id');
+    if (archiveId)
+        action.archiveId = archiveId;
     action.archive();
 }
 

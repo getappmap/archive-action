@@ -68221,11 +68221,6 @@ class ArchiveAction {
         }
         if (revision)
             action.revision = revision;
-        if (process.env.ACT === 'true') {
-            (0, log_1.default)(log_1.LogLevel.Info, `Running in ACT mode. Setting runId = 1, attemptId = 1`);
-            action.jobRunId = 1;
-            action.jobAttemptId = 1;
-        }
     }
     uploadArtifact(archiveFile) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -68260,20 +68255,38 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const executeCommand_1 = __nccwpck_require__(8659);
+const verbose_1 = __importDefault(__nccwpck_require__(2472));
 class CLIArchiveCommand {
     constructor() {
         this.toolsCommand = 'appmap';
     }
     archive(options) {
         return __awaiter(this, void 0, void 0, function* () {
-            let archiveCommand = `${this.toolsCommand} archive`;
+            let command = `${this.toolsCommand} archive`;
+            if ((0, verbose_1.default)())
+                command += ' --verbose';
             if (options.index === false)
-                archiveCommand += ' --no-index';
+                command += ' --no-index';
             if (options.revision)
-                archiveCommand += ` --revision ${options.revision}`;
-            yield (0, executeCommand_1.executeCommand)(archiveCommand);
+                command += ` --revision ${options.revision}`;
+            yield (0, executeCommand_1.executeCommand)(command);
+        });
+    }
+    restore(options) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let command = `${this.toolsCommand} restore`;
+            if ((0, verbose_1.default)())
+                command += ' --verbose';
+            if (options.revision)
+                command += ` --revision ${options.revision}`;
+            if (options.exact)
+                command += ' --exact';
+            yield (0, executeCommand_1.executeCommand)(command);
         });
     }
 }
@@ -68649,11 +68662,11 @@ exports.Merge = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const assert_1 = __importDefault(__nccwpck_require__(9491));
 const promises_1 = __nccwpck_require__(3292);
-const executeCommand_1 = __nccwpck_require__(8659);
 const locateArchiveFile_1 = __importDefault(__nccwpck_require__(5176));
 const ArchiveAction_1 = __importDefault(__nccwpck_require__(6335));
 const log_1 = __importStar(__nccwpck_require__(5042));
 const glob_1 = __nccwpck_require__(5029);
+const path_1 = __nccwpck_require__(1017);
 class Merge extends ArchiveAction_1.default {
     constructor(archiveCount) {
         super();
@@ -68667,13 +68680,14 @@ class Merge extends ArchiveAction_1.default {
             (0, log_1.default)(log_1.LogLevel.Debug, `archiveCount: ${this.archiveCount}`);
             (0, assert_1.default)(this.jobRunId, 'run number (GITHUB_RUN_ID) is not set');
             (0, assert_1.default)(this.jobAttemptId, 'attempt number (GITHUB_RUN_ATTEMPT) is not set');
+            (0, assert_1.default)(this.archiveCount > 0, 'archive count must be greater than zero');
             for (const worker of Array.from({ length: this.archiveCount }, (_, i) => i)) {
                 const key = ArchiveAction_1.default.cacheKey(this.jobRunId, this.jobAttemptId, worker);
                 (0, log_1.default)(log_1.LogLevel.Info, `Restoring AppMap archive ./appmap/archive using cache key ${key}`);
-                yield this.cacheStore.restore(['.appmap/archive'], key);
-                const filePaths = yield (0, glob_1.glob)('.appmap/archive/**/*.tar');
+                yield this.cacheStore.restore([`.appmap/archive/full/${worker}.tar`], key);
+                const filePaths = yield (0, glob_1.glob)((0, path_1.join)('.appmap/work', worker.toString()));
                 if (filePaths.length === 0) {
-                    throw new Error(`No AppMap archives found in .appmap/archive using cache key ${key}`);
+                    throw new Error(`No AppMap archives found in .appmap/archive/work using cache key ${key}`);
                 }
                 if (filePaths.length !== 1) {
                     (0, log_1.default)(log_1.LogLevel.Warn, `Expected exactly one AppMap archive, found ${filePaths.length}`);
@@ -68682,7 +68696,34 @@ class Merge extends ArchiveAction_1.default {
                     yield this.unpackArchive(filePath);
                 }
             }
-            const archiveOptions = { revision: this.revision, index: false };
+            const workDirs = yield (0, glob_1.glob)('.appmap/work/*');
+            (0, assert_1.default)(workDirs.length === this.archiveCount, `Expected ${this.archiveCount} work directories, found ${workDirs.length}`);
+            let appmapDir;
+            {
+                const workDir = workDirs[0];
+                (0, assert_1.default)(workDir);
+                const archiveMetadata = JSON.parse(yield (0, promises_1.readFile)((0, path_1.join)(workDir, 'appmap_archive.json'), 'utf-8'));
+                const configAppMapDir = archiveMetadata.config.appmap_dir;
+                if (configAppMapDir) {
+                    appmapDir = configAppMapDir;
+                }
+                else {
+                    (0, log_1.default)(log_1.LogLevel.Warn, `config.appmap_dir not found in archive metadata, using default value tmp/appmap`);
+                    appmapDir = 'tmp/appmap';
+                }
+            }
+            yield (0, promises_1.mkdir)(appmapDir, { recursive: true });
+            for (const workDir of workDirs) {
+                const directoryContents = yield (0, glob_1.glob)((0, path_1.join)(workDir, '*'), { dot: true });
+                for (const file of directoryContents) {
+                    if (file.includes('/appmap_archive.') && file.endsWith('.json'))
+                        continue;
+                    yield (0, promises_1.cp)(file, (0, path_1.join)(appmapDir, (0, path_1.basename)(file)), { recursive: true });
+                }
+            }
+            const archiveOptions = { index: false };
+            if (this.revision)
+                archiveOptions.revision = this.revision;
             yield this.archiveCommand.archive(archiveOptions);
             const archiveFile = yield (0, locateArchiveFile_1.default)('.');
             return yield this.uploadArtifact(archiveFile);
@@ -68690,18 +68731,12 @@ class Merge extends ArchiveAction_1.default {
     }
     unpackArchive(archiveFile) {
         return __awaiter(this, void 0, void 0, function* () {
-            let appmapDir;
-            yield (0, promises_1.mkdir)('tmp/appmap', { recursive: true });
-            yield (0, executeCommand_1.executeCommand)(`tar -xf ${archiveFile} -C tmp/appmap`);
-            if (!appmapDir) {
-                const archiveMetadata = JSON.parse(yield (0, promises_1.readFile)('tmp/appmap/appmap_archive.json', 'utf-8'));
-                appmapDir = (archiveMetadata.config.appmapDir || 'tmp/appmap');
-                yield (0, promises_1.mkdir)(appmapDir, { recursive: true });
-            }
-            yield (0, executeCommand_1.executeCommand)(`tar -xzf tmp/appmap/appmaps.tar.gz -C ${appmapDir}`);
-            yield (0, promises_1.rm)('tmp/appmap/appmap_archive.json');
-            yield (0, promises_1.rm)('tmp/appmap/appmaps.tar.gz');
-            yield (0, promises_1.rm)(archiveFile);
+            const archiveId = (0, path_1.basename)(archiveFile, '.tar');
+            const options = { revision: archiveId, exact: true };
+            this.archiveCommand.restore(options);
+            const workDir = (0, path_1.join)('.appmap/work', archiveId);
+            const workDirStats = yield (0, promises_1.stat)(workDir);
+            (0, assert_1.default)(workDirStats.isDirectory(), `${workDir} is not a directory`);
         });
     }
 }

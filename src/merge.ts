@@ -1,14 +1,13 @@
 import * as core from '@actions/core';
 import assert from 'assert';
-import {mkdir, readFile, rm} from 'fs/promises';
-import {executeCommand} from './executeCommand';
+import {cp, mkdir, readFile, stat} from 'fs/promises';
 import locateArchiveFile from './locateArchiveFile';
 import ArchiveAction from './ArchiveAction';
 import log, {LogLevel} from './log';
 import ArchiveResults from './ArchiveResults';
-import {ArchiveOptions} from './ArchiveCommand';
-import {existsSync} from 'fs';
+import {ArchiveOptions, RestoreOptions} from './ArchiveCommand';
 import {glob} from 'glob';
+import {basename, join} from 'path';
 
 export class Merge extends ArchiveAction {
   constructor(public archiveCount: number) {
@@ -23,15 +22,16 @@ export class Merge extends ArchiveAction {
 
     assert(this.jobRunId, 'run number (GITHUB_RUN_ID) is not set');
     assert(this.jobAttemptId, 'attempt number (GITHUB_RUN_ATTEMPT) is not set');
+    assert(this.archiveCount > 0, 'archive count must be greater than zero');
 
     for (const worker of Array.from({length: this.archiveCount}, (_, i) => i)) {
       const key = ArchiveAction.cacheKey(this.jobRunId, this.jobAttemptId, worker);
       log(LogLevel.Info, `Restoring AppMap archive ./appmap/archive using cache key ${key}`);
-      await this.cacheStore.restore(['.appmap/archive'], key);
+      await this.cacheStore.restore([`.appmap/archive/full/${worker}.tar`], key);
 
-      const filePaths = await glob('.appmap/archive/**/*.tar');
+      const filePaths = await glob(join('.appmap/work', worker.toString()));
       if (filePaths.length === 0) {
-        throw new Error(`No AppMap archives found in .appmap/archive using cache key ${key}`);
+        throw new Error(`No AppMap archives found in .appmap/archive/work using cache key ${key}`);
       }
       if (filePaths.length !== 1) {
         log(LogLevel.Warn, `Expected exactly one AppMap archive, found ${filePaths.length}`);
@@ -42,7 +42,42 @@ export class Merge extends ArchiveAction {
       }
     }
 
-    const archiveOptions: ArchiveOptions = {revision: this.revision, index: false};
+    const workDirs = await glob('.appmap/work/*');
+    assert(
+      workDirs.length === this.archiveCount,
+      `Expected ${this.archiveCount} work directories, found ${workDirs.length}`
+    );
+    let appmapDir: string;
+    {
+      const workDir = workDirs[0];
+      assert(workDir);
+      const archiveMetadata = JSON.parse(
+        await readFile(join(workDir, 'appmap_archive.json'), 'utf-8')
+      );
+      const configAppMapDir = archiveMetadata.config.appmap_dir;
+      if (configAppMapDir) {
+        appmapDir = configAppMapDir;
+      } else {
+        log(
+          LogLevel.Warn,
+          `config.appmap_dir not found in archive metadata, using default value tmp/appmap`
+        );
+        appmapDir = 'tmp/appmap';
+      }
+    }
+
+    await mkdir(appmapDir, {recursive: true});
+    for (const workDir of workDirs) {
+      const directoryContents = await glob(join(workDir, '*'), {dot: true});
+      for (const file of directoryContents) {
+        if (file.includes('/appmap_archive.') && file.endsWith('.json')) continue;
+
+        await cp(file, join(appmapDir, basename(file)), {recursive: true});
+      }
+    }
+
+    const archiveOptions: ArchiveOptions = {index: false};
+    if (this.revision) archiveOptions.revision = this.revision;
     await this.archiveCommand.archive(archiveOptions);
 
     const archiveFile = await locateArchiveFile('.');
@@ -51,21 +86,13 @@ export class Merge extends ArchiveAction {
   }
 
   async unpackArchive(archiveFile: string) {
-    let appmapDir: string | undefined;
-    await mkdir('tmp/appmap', {recursive: true});
+    const archiveId = basename(archiveFile, '.tar');
+    const options: RestoreOptions = {revision: archiveId, exact: true};
+    this.archiveCommand.restore(options);
 
-    await executeCommand(`tar -xf ${archiveFile} -C tmp/appmap`);
-
-    if (!appmapDir) {
-      const archiveMetadata = JSON.parse(await readFile('tmp/appmap/appmap_archive.json', 'utf-8'));
-      appmapDir = (archiveMetadata.config.appmapDir || 'tmp/appmap') as string;
-      await mkdir(appmapDir, {recursive: true});
-    }
-
-    await executeCommand(`tar -xzf tmp/appmap/appmaps.tar.gz -C ${appmapDir}`);
-    await rm('tmp/appmap/appmap_archive.json');
-    await rm('tmp/appmap/appmaps.tar.gz');
-    await rm(archiveFile);
+    const workDir = join('.appmap/work', archiveId);
+    const workDirStats = await stat(workDir);
+    assert(workDirStats.isDirectory(), `${workDir} is not a directory`);
   }
 }
 

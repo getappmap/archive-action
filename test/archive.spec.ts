@@ -50,25 +50,20 @@ describe('archive', () => {
 
   describe('in matrix mode', () => {
     it('stores the archive to the build cache', async () => {
+      const archiveId = 1;
       jest
         .spyOn(locateArchiveFile, 'default')
-        .mockResolvedValue('.appmap/archive/full/402dec8.tar');
+        .mockResolvedValue(`.appmap/archive/full/${archiveId}.tar`);
 
-      context.noCacheStore.rename = jest.fn();
       context.noCacheStore.save = jest.fn();
 
-      action.workerId = 1;
+      action.archiveId = archiveId;
       await action.archive();
 
-      expect(context.noCacheStore.rename).toHaveBeenCalledTimes(1);
-      expect(context.noCacheStore.rename).toHaveBeenCalledWith(
-        '.appmap/archive/full/402dec8.tar',
-        '.appmap/archive/full/1.tar'
-      );
       expect([...context.artifactStore.artifacts.keys()]).toEqual([]);
       expect(context.noCacheStore.save).toHaveBeenCalledTimes(1);
       expect(context.noCacheStore.save).toHaveBeenCalledWith(
-        ['.appmap/archive'],
+        [`.appmap/archive/full/${archiveId}.tar`],
         'appmap-archive-run_1-attempt_1-worker_1'
       );
     });
