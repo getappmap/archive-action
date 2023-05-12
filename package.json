@@ -14,7 +14,7 @@
     "format": "prettier --write '**/*.ts'"
   },
   "devDependencies": {
-    "@appland/appmap-agent-js": "^13.7.0",
+    "@appland/appmap-agent-js": "^13.8.0",
     "@types/glob": "^8.1.0",
     "@types/jest": "^29.5.0",
     "@types/node": "^18.15.11",
