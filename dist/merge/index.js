@@ -68667,6 +68667,7 @@ const ArchiveAction_1 = __importDefault(__nccwpck_require__(6335));
 const log_1 = __importStar(__nccwpck_require__(5042));
 const glob_1 = __nccwpck_require__(5029);
 const path_1 = __nccwpck_require__(1017);
+const fs_1 = __nccwpck_require__(7147);
 class Merge extends ArchiveAction_1.default {
     constructor(archiveCount) {
         super();
@@ -68682,19 +68683,12 @@ class Merge extends ArchiveAction_1.default {
             (0, assert_1.default)(this.jobAttemptId, 'attempt number (GITHUB_RUN_ATTEMPT) is not set');
             (0, assert_1.default)(this.archiveCount > 0, 'archive count must be greater than zero');
             for (const worker of Array.from({ length: this.archiveCount }, (_, i) => i)) {
+                const archiveFile = `.appmap/archive/full/${worker}.tar`;
                 const key = ArchiveAction_1.default.cacheKey(this.jobRunId, this.jobAttemptId, worker);
-                (0, log_1.default)(log_1.LogLevel.Info, `Restoring AppMap archive ./appmap/archive using cache key ${key}`);
-                yield this.cacheStore.restore([`.appmap/archive/full/${worker}.tar`], key);
-                const filePaths = yield (0, glob_1.glob)((0, path_1.join)('.appmap/work', worker.toString()));
-                if (filePaths.length === 0) {
-                    throw new Error(`No AppMap archives found in .appmap/archive/work using cache key ${key}`);
-                }
-                if (filePaths.length !== 1) {
-                    (0, log_1.default)(log_1.LogLevel.Warn, `Expected exactly one AppMap archive, found ${filePaths.length}`);
-                }
-                for (const filePath of filePaths) {
-                    yield this.unpackArchive(filePath);
-                }
+                (0, log_1.default)(log_1.LogLevel.Info, `Restoring AppMap archive ${archiveFile} using cache key ${key}`);
+                yield this.cacheStore.restore([archiveFile], key);
+                (0, assert_1.default)((0, fs_1.existsSync)(archiveFile), `Archive file ${archiveFile} was not restored from the cache`);
+                yield this.unpackArchive(worker.toString());
             }
             const workDirs = yield (0, glob_1.glob)('.appmap/work/*');
             (0, assert_1.default)(workDirs.length === this.archiveCount, `Expected ${this.archiveCount} work directories, found ${workDirs.length}`);
@@ -68729,14 +68723,13 @@ class Merge extends ArchiveAction_1.default {
             return yield this.uploadArtifact(archiveFile);
         });
     }
-    unpackArchive(archiveFile) {
+    unpackArchive(archiveId) {
         return __awaiter(this, void 0, void 0, function* () {
-            const archiveId = (0, path_1.basename)(archiveFile, '.tar');
             const options = { revision: archiveId, exact: true };
-            this.archiveCommand.restore(options);
+            yield this.archiveCommand.restore(options);
             const workDir = (0, path_1.join)('.appmap/work', archiveId);
             const workDirStats = yield (0, promises_1.stat)(workDir);
-            (0, assert_1.default)(workDirStats.isDirectory(), `${workDir} is not a directory`);
+            (0, assert_1.default)(workDirStats.isDirectory(), `${workDir} does not exist`);
         });
     }
 }

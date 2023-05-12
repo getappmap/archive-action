@@ -5,6 +5,8 @@ import {rm} from 'fs/promises';
 import {Merge} from '../src/merge';
 import * as test from './helper';
 import * as locateArchiveFile from '../src/locateArchiveFile';
+import {RestoreOptions} from '../src/ArchiveCommand';
+import {executeCommand} from '../src/executeCommand';
 
 describe('merge', () => {
   let context: test.ArchiveTestContext;
@@ -21,8 +23,8 @@ describe('merge', () => {
     action.jobAttemptId = 1;
     action.jobRunId = 1;
 
-    await rm(join(context.workDir, 'tmp/appmap'), {recursive: true});
-    await mkdir(join(context.workDir, 'tmp/appmap'), {recursive: true});
+    await rm(join('tmp/appmap'), {recursive: true});
+    await mkdir(join('tmp/appmap'), {recursive: true});
   });
 
   afterEach(() => {
@@ -32,16 +34,19 @@ describe('merge', () => {
 
   it('fetches archives from the cache and merges them', async () => {
     const placeTarFile = async (revision: string) => {
-      await mkdir(join(context.workDir, '.appmap/work', revision.toString()), {recursive: true});
-      await cp(
-        join(test.FixtureDir, 'tmp/appmap'),
-        join(context.workDir, '.appmap/work', revision.toString()),
-        {
-          recursive: true,
-        }
+      await mkdir(join('.appmap/archive/full'), {recursive: true});
+      await writeFile(join('.appmap/archive/full', `${revision}.tar`), '# dummy file');
+    };
+
+    const unpackTarFile = async (revision: string) => {
+      await mkdir(join('.appmap/work', revision), {
+        recursive: true,
+      });
+      await executeCommand(
+        `cp -r ${join(test.FixtureDir, 'tmp/appmap')} ${join('.appmap/work', revision)}`
       );
       await writeFile(
-        join(context.workDir, '.appmap/work', revision.toString(), 'appmap_archive.json'),
+        join('.appmap/work', revision.toString(), 'appmap_archive.json'),
         JSON.stringify(
           {
             config: {
@@ -64,6 +69,16 @@ describe('merge', () => {
         await placeTarFile(workerId);
       });
 
+    context.archiveCommand.restore = jest
+      .fn()
+      .mockImplementation(async (options: RestoreOptions) => {
+        expect(options.exact).toEqual(true);
+        const workerId = options.revision;
+        assert(workerId !== undefined);
+        expect(['0', '1']).toContain(workerId);
+        await unpackTarFile(workerId);
+      });
+
     jest.spyOn(locateArchiveFile, 'default').mockResolvedValue('.appmap/archive/full/402dec8.tar');
 
     await action.merge();
@@ -76,8 +91,6 @@ describe('merge', () => {
     );
 
     expect(context.archiveCommand.commands).toEqual([
-      {command: 'restore', options: {revision: '0', exact: true}},
-      {command: 'restore', options: {revision: '1', exact: true}},
       {
         command: 'archive',
         options: {index: false},

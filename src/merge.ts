@@ -8,6 +8,7 @@ import ArchiveResults from './ArchiveResults';
 import {ArchiveOptions, RestoreOptions} from './ArchiveCommand';
 import {glob} from 'glob';
 import {basename, join} from 'path';
+import {existsSync} from 'fs';
 
 export class Merge extends ArchiveAction {
   constructor(public archiveCount: number) {
@@ -25,21 +26,15 @@ export class Merge extends ArchiveAction {
     assert(this.archiveCount > 0, 'archive count must be greater than zero');
 
     for (const worker of Array.from({length: this.archiveCount}, (_, i) => i)) {
+      const archiveFile = `.appmap/archive/full/${worker}.tar`;
       const key = ArchiveAction.cacheKey(this.jobRunId, this.jobAttemptId, worker);
-      log(LogLevel.Info, `Restoring AppMap archive ./appmap/archive using cache key ${key}`);
-      await this.cacheStore.restore([`.appmap/archive/full/${worker}.tar`], key);
-
-      const filePaths = await glob(join('.appmap/work', worker.toString()));
-      if (filePaths.length === 0) {
-        throw new Error(`No AppMap archives found in .appmap/archive/work using cache key ${key}`);
-      }
-      if (filePaths.length !== 1) {
-        log(LogLevel.Warn, `Expected exactly one AppMap archive, found ${filePaths.length}`);
-      }
-
-      for (const filePath of filePaths) {
-        await this.unpackArchive(filePath);
-      }
+      log(LogLevel.Info, `Restoring AppMap archive ${archiveFile} using cache key ${key}`);
+      await this.cacheStore.restore([archiveFile], key);
+      assert(
+        existsSync(archiveFile),
+        `Archive file ${archiveFile} was not restored from the cache`
+      );
+      await this.unpackArchive(worker.toString());
     }
 
     const workDirs = await glob('.appmap/work/*');
@@ -85,14 +80,13 @@ export class Merge extends ArchiveAction {
     return await this.uploadArtifact(archiveFile);
   }
 
-  async unpackArchive(archiveFile: string) {
-    const archiveId = basename(archiveFile, '.tar');
+  async unpackArchive(archiveId: string) {
     const options: RestoreOptions = {revision: archiveId, exact: true};
-    this.archiveCommand.restore(options);
+    await this.archiveCommand.restore(options);
 
     const workDir = join('.appmap/work', archiveId);
     const workDirStats = await stat(workDir);
-    assert(workDirStats.isDirectory(), `${workDir} is not a directory`);
+    assert(workDirStats.isDirectory(), `${workDir} does not exist`);
   }
 }
 
