@@ -4,29 +4,30 @@ on:
   pull_request:
     types:
       - closed
-  schedule:
-    # Keep the artifact up to date, as it will expire after 90 days.
-    - cron: 1 1 1 * *
 
 env:
   APPMAP_TELEMETRY_DISABLED: 'true'
 
 jobs:
-  archive:
+  appmap_archive:
     runs-on: ubuntu-latest
     if: github.event.pull_request.merged == true
     steps:
       - name: Checkout step
         uses: actions/checkout@v3
+
       - name: Install dependencies
         run: yarn install
-      - name: Install and configure AppMap tools
-        uses: getappmap/install-appmap-action@v1-pre.8
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          verbose: true
+
+      - name: Install AppMap tools
+        run: |
+          curl -o /usr/local/bin/appmap -L https://github.com/getappmap/appmap-js/releases/download/%40appland%2Fappmap-preflight-v1.0-pre.19/appmap-preflight-linux-x64
+          chmod a+x /usr/local/bin/appmap
+          ln -s /usr/local/bin/appmap /tmp/appmap
+
       - name: Build AppMaps
-        run: yarn appmap
+        run: yarn test
+
       - name: Archive AppMaps
         uses: ./
         with:
