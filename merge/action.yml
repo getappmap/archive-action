@@ -1,14 +1,10 @@
-name: Build and save an AppMap archive
+name: Merge and save AppMap archives from a matrix job
 inputs:
   directory:
     description: Command working directory.
-  archive-id:
-    description: |
-      0-based numerical id of a matrix job. This id is used to store the AppMap archive in the action cache.
-      Once the matrix jobs complete, the `merge` action can be used to merge the archives into a single archive,
-      and then save it as an artifact. If `archive-id` is set, the archive is saved to the cache. Otherwise,
-      it's uploadd to the artifact store. For a non-matrix job, `archive-id` should not be used.
-    type: number
+  archive-count:
+    description: Number of archive files to merge.
+    required: true
   revision:
     description: |
       Revision (commit SHA) to name the AppMap archive with. The default is the GITHUB_SHA.
@@ -22,4 +18,4 @@ inputs:
     default: false
 runs:
   using: 'node16'
-  main: 'dist/archive/index.js'
+  main: '../dist/merge/index.js'

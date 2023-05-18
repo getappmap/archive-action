@@ -1,5 +1,5 @@
 import {cp, mkdir, rm, writeFile} from 'fs/promises';
-import {locateArchiveFile} from '../src/locateArchiveFile';
+import locateArchiveFile from '../src/locateArchiveFile';
 import * as test from './helper';
 import {join} from 'path';
 
@@ -9,8 +9,8 @@ describe('locateArchiveFile', () => {
   let workDir: string;
 
   beforeEach(() => (workDir = test.makeWorkDir()));
-  beforeEach(() => cp(test.fixtureDir, workDir, {recursive: true, force: true}));
-  afterEach(() => rm(workDir, {recursive: true, force: true}));
+  beforeEach(async () => await cp(test.FixtureDir, workDir, {recursive: true, force: true}));
+  afterEach(async () => await rm(workDir, {recursive: true, force: true}));
 
   it(`errors if there's no archive`, async () => {
     expect(locateArchiveFile(workDir)).rejects.toThrow(/No AppMap archives found/);

@@ -4,7 +4,7 @@ import {join} from 'path';
 import log, {LogLevel} from './log';
 import {stat} from 'fs/promises';
 
-export async function locateArchiveFile(workDir: string): Promise<string> {
+export default async function locateArchiveFile(workDir: string): Promise<string> {
   const archiveFiles = (
     await glob(join(workDir, '.appmap', 'archive', '**', '*.tar'), {dot: true})
   ).filter(file => existsSync(file));
@@ -28,6 +28,8 @@ export async function locateArchiveFile(workDir: string): Promise<string> {
       )}.\nI'll upload the most recent one, which is ${result}.`
     );
   }
+
+  log(LogLevel.Debug, `archiveFile: ${result}`);
 
   return result;
 }
