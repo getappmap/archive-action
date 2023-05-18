@@ -18,9 +18,9 @@ describe('archive', () => {
     action.jobRunId = 1;
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     assert(context);
-    context.teardown();
+    await context.teardown();
   });
 
   it('build and store an AppMap archive', async () => {

@@ -8,8 +8,7 @@
     "compile": "tsc",
     "package": "ncc build -o dist/archive --source-map src/archive.ts && ncc build -o dist/merge --source-map src/merge.ts",
     "build": "yarn compile && yarn package",
-    "test": "tsc --noEmit && jest --runInBand",
-    "appmap": "appmap-agent-js -- jest --no-cache --runInBand",
+    "test": "find test -name '*.spec.ts' -exec yarn appmap-agent-js -- jest --no-cache {} \\;",
     "clean": "rm -rf build dist tmp",
     "format": "prettier --write '**/*.ts'"
   },

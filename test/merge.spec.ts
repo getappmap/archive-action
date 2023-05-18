@@ -1,6 +1,6 @@
 import assert from 'assert';
 import {join} from 'path';
-import {cp, mkdir, writeFile} from 'fs/promises';
+import {mkdir, writeFile} from 'fs/promises';
 import {rm} from 'fs/promises';
 import {Merge} from '../src/merge';
 import * as test from './helper';
@@ -27,9 +27,9 @@ describe('merge', () => {
     await mkdir(join('tmp/appmap'), {recursive: true});
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     assert(context);
-    context.teardown();
+    await context.teardown();
   });
 
   it('fetches archives from the cache and merges them', async () => {
