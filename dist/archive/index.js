@@ -68289,6 +68289,14 @@ class CLIArchiveCommand {
             yield (0, executeCommand_1.executeCommand)(command);
         });
     }
+    generateOpenAPI(directory) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let command = `${this.toolsCommand} openapi -d ${directory} --appmap-dir . --output-file openapi.yml`;
+            if ((0, verbose_1.default)())
+                command += ' --verbose';
+            yield (0, executeCommand_1.executeCommand)(command);
+        });
+    }
 }
 exports["default"] = CLIArchiveCommand;
 

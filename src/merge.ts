@@ -71,6 +71,13 @@ export class Merge extends ArchiveAction {
       }
     }
 
+    // TODO: Each archive directory already contains an openapi.yml file, so it would be
+    // quite possible, and much more efficient, to merge those files instead of generating
+    // a new one from scratch.
+    log(LogLevel.Info, 'Generating OpenAPI definitions');
+    await this.archiveCommand.generateOpenAPI(appmapDir);
+
+    log(LogLevel.Info, 'Building merged archive');
     const archiveOptions: ArchiveOptions = {index: false};
     if (this.revision) archiveOptions.revision = this.revision;
     await this.archiveCommand.archive(archiveOptions);
