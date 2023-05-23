@@ -1,10 +1,15 @@
 import * as core from '@actions/core';
+import {ArgumentParser} from 'argparse';
 import assert from 'assert';
 import ArchiveAction from './ArchiveAction';
 import locateArchiveFile from './locateArchiveFile';
 import log, {LogLevel} from './log';
 import ArchiveResults from './ArchiveResults';
 import {ArchiveOptions} from './ArchiveCommand';
+import verbose from './verbose';
+import CLIArchiveCommand from './CLIArchiveCommand';
+import LocalArtifactStore from './LocalArtifactStore';
+import LocalCacheStore from './LocalCacheStore';
 
 export class Archive extends ArchiveAction {
   public archiveId?: string | number;
@@ -23,6 +28,9 @@ export class Archive extends ArchiveAction {
     const archiveOptions: ArchiveOptions = {};
     const revision = this.archiveId ? this.archiveId.toString() : this.revision;
     if (revision) archiveOptions.revision = revision;
+
+    log(LogLevel.Info, `Archiving AppMaps with options ${JSON.stringify(archiveOptions)}}`);
+
     await this.archiveCommand.archive(archiveOptions);
     const archiveFile = await locateArchiveFile('.');
 
@@ -41,12 +49,49 @@ export class Archive extends ArchiveAction {
   }
 }
 
-if (require.main === module) {
+async function runInGitHub() {
+  const archiveId = core.getInput('archive-id');
+
   const action = new Archive();
   ArchiveAction.prepareAction(action);
-
-  const archiveId = core.getInput('archive-id');
   if (archiveId) action.archiveId = archiveId;
 
-  action.archive();
+  await action.archive();
+}
+
+async function runLocally() {
+  const parser = new ArgumentParser({
+    description: 'Create and store an AppMap archive',
+  });
+  parser.add_argument('-v', '--verbose');
+  parser.add_argument('-d', '--directory', {help: 'Program working directory'});
+  parser.add_argument('--appmap-command', {default: 'appmap'});
+  parser.add_argument('-r', '--revision', {help: 'Git revision'});
+  parser.add_argument('-a', '--archive-id', {
+    help: 'Archive id, used in place of Git revision for matrix jobs',
+  });
+
+  const options = parser.parse_args();
+  const {directory, revision, appmap_command: appmapCommand, archive_id: archiveId} = options;
+
+  verbose(options.verbose === 'true' || options.verbose === true);
+  if (directory) process.chdir(directory);
+
+  const action = new Archive();
+  if (appmapCommand) {
+    const archiveCommand = new CLIArchiveCommand();
+    archiveCommand.toolsCommand = appmapCommand;
+    action.archiveCommand = archiveCommand;
+  }
+  action.artifactStore = new LocalArtifactStore();
+  action.cacheStore = new LocalCacheStore();
+  if (revision) action.revision = revision;
+  if (archiveId) action.archiveId = archiveId;
+
+  await action.archive();
+}
+
+if (require.main === module) {
+  if (process.env.CI) runInGitHub();
+  else runLocally();
 }
