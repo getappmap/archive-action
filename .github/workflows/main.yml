@@ -34,7 +34,7 @@ jobs:
 
       - name: Preflight
         id: preflight
-        uses: getappmap/preflight-appmap-action@v1-pre.10
+        uses: getappmap/preflight-appmap-action@v1-pre.12
         with:
           base-revision: origin/main
           head-revision: ${{ github.event.pull_request.head.sha }}
