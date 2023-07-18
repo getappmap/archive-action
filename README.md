@@ -22,7 +22,3 @@ $ yarn package
 
 - [ ] Add description to action.yml.
 - [ ] Update repo description in GitHub.
-- [ ] Use appmap-action-utils
-- [x] Store AppMap archive contents as an artifact.
-- [x] Remove the AppMap data from the archive, and point to the artifact instead.
-- [x] Consume AppMap tools path from getappmap/install-appmap-action.
