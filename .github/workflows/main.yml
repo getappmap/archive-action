@@ -42,8 +42,6 @@ jobs:
       - name: Archive AppMaps
         if: github.event_name != 'pull_request'
         uses: ./
-        with:
-          verbose: true
 
       - name: Analyze AppMaps
         uses: getappmap/analyze-action@v1-pre.16
