@@ -14,6 +14,7 @@ import verbose from './verbose';
 import CLIArchiveCommand from './CLIArchiveCommand';
 import LocalArtifactStore from './LocalArtifactStore';
 import LocalCacheStore from './LocalCacheStore';
+import {setVerbose} from './setVerbose';
 
 export class Merge extends ArchiveAction {
   constructor(public archiveCount: number) {
@@ -146,7 +147,8 @@ async function runLocally() {
     job_attempt_id: jobAttemptId,
   } = options;
 
-  verbose(options.verbose === 'true' || options.verbose === true);
+  setVerbose(options.verbose);
+
   if (directory) process.chdir(directory);
 
   const action = new Merge(parseInt(archiveCount, 10));

@@ -72431,7 +72431,7 @@ const log_1 = __importStar(__nccwpck_require__(5042));
 const GitHubArtifactStore_1 = __importDefault(__nccwpck_require__(2427));
 const GitHubCacheStore_1 = __importDefault(__nccwpck_require__(7418));
 const CLIArchiveCommand_1 = __importDefault(__nccwpck_require__(8634));
-const verbose_1 = __importDefault(__nccwpck_require__(2472));
+const setVerbose_1 = __nccwpck_require__(5284);
 class ArchiveAction {
     constructor() {
         this.jobRunId = process.env.GITHUB_RUN_ID;
@@ -72449,7 +72449,7 @@ class ArchiveAction {
         ].join('-');
     }
     static prepareAction(action) {
-        (0, verbose_1.default)(core.getBooleanInput('verbose'));
+        (0, setVerbose_1.setVerbose)(core.getInput('verbose'));
         const directory = core.getInput('directory');
         // commit-sha is checked for backwards compatibility
         const revision = core.getInput('revision') || core.getInput('commit-sha') || process.env.GITHUB_SHA;
@@ -73001,10 +73001,10 @@ const glob_1 = __nccwpck_require__(5029);
 const path_1 = __nccwpck_require__(1017);
 const fs_1 = __nccwpck_require__(7147);
 const argparse_1 = __nccwpck_require__(1515);
-const verbose_1 = __importDefault(__nccwpck_require__(2472));
 const CLIArchiveCommand_1 = __importDefault(__nccwpck_require__(8634));
 const LocalArtifactStore_1 = __importDefault(__nccwpck_require__(3656));
 const LocalCacheStore_1 = __importDefault(__nccwpck_require__(5419));
+const setVerbose_1 = __nccwpck_require__(5284);
 class Merge extends ArchiveAction_1.default {
     constructor(archiveCount) {
         super();
@@ -73111,7 +73111,7 @@ function runLocally() {
         parser.add_argument('--job-attempt-id', { required: true });
         const options = parser.parse_args();
         const { directory, archive_count: archiveCount, revision, appmap_command: appmapCommand, job_run_id: jobRunId, job_attempt_id: jobAttemptId, } = options;
-        (0, verbose_1.default)(options.verbose === 'true' || options.verbose === true);
+        (0, setVerbose_1.setVerbose)(options.verbose);
         if (directory)
             process.chdir(directory);
         const action = new Merge(parseInt(archiveCount, 10));
@@ -73135,6 +73135,25 @@ if (require.main === require.cache[eval('__filename')]) {
     else
         runLocally();
 }
+
+
+/***/ }),
+
+/***/ 5284:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.setVerbose = void 0;
+const verbose_1 = __importDefault(__nccwpck_require__(2472));
+function setVerbose(isVerbose) {
+    (0, verbose_1.default)(isVerbose === 'true' || isVerbose === true);
+}
+exports.setVerbose = setVerbose;
 
 
 /***/ }),

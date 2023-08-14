@@ -72431,7 +72431,7 @@ const log_1 = __importStar(__nccwpck_require__(5042));
 const GitHubArtifactStore_1 = __importDefault(__nccwpck_require__(2427));
 const GitHubCacheStore_1 = __importDefault(__nccwpck_require__(7418));
 const CLIArchiveCommand_1 = __importDefault(__nccwpck_require__(8634));
-const verbose_1 = __importDefault(__nccwpck_require__(2472));
+const setVerbose_1 = __nccwpck_require__(5284);
 class ArchiveAction {
     constructor() {
         this.jobRunId = process.env.GITHUB_RUN_ID;
@@ -72449,7 +72449,7 @@ class ArchiveAction {
         ].join('-');
     }
     static prepareAction(action) {
-        (0, verbose_1.default)(core.getBooleanInput('verbose'));
+        (0, setVerbose_1.setVerbose)(core.getInput('verbose'));
         const directory = core.getInput('directory');
         // commit-sha is checked for backwards compatibility
         const revision = core.getInput('revision') || core.getInput('commit-sha') || process.env.GITHUB_SHA;
@@ -72789,10 +72789,10 @@ const assert_1 = __importDefault(__nccwpck_require__(9491));
 const ArchiveAction_1 = __importDefault(__nccwpck_require__(6335));
 const locateArchiveFile_1 = __importDefault(__nccwpck_require__(5176));
 const log_1 = __importStar(__nccwpck_require__(5042));
-const verbose_1 = __importDefault(__nccwpck_require__(2472));
 const CLIArchiveCommand_1 = __importDefault(__nccwpck_require__(8634));
 const LocalArtifactStore_1 = __importDefault(__nccwpck_require__(3656));
 const LocalCacheStore_1 = __importDefault(__nccwpck_require__(5419));
+const setVerbose_1 = __nccwpck_require__(5284);
 class Archive extends ArchiveAction_1.default {
     archive() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -72830,6 +72830,8 @@ exports.Archive = Archive;
 function runInGitHub() {
     return __awaiter(this, void 0, void 0, function* () {
         const archiveId = core.getInput('archive-id');
+        const isVerbose = core.getInput('verbose');
+        (0, setVerbose_1.setVerbose)(isVerbose);
         const action = new Archive();
         ArchiveAction_1.default.prepareAction(action);
         if (archiveId)
@@ -72851,7 +72853,7 @@ function runLocally() {
         });
         const options = parser.parse_args();
         const { directory, revision, appmap_command: appmapCommand, archive_id: archiveId } = options;
-        (0, verbose_1.default)(options.verbose === 'true' || options.verbose === true);
+        (0, setVerbose_1.setVerbose)(options.verbose);
         if (directory)
             process.chdir(directory);
         const action = new Archive();
@@ -73083,6 +73085,25 @@ function log(level, message) {
     Logger[level](message);
 }
 exports["default"] = log;
+
+
+/***/ }),
+
+/***/ 5284:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.setVerbose = void 0;
+const verbose_1 = __importDefault(__nccwpck_require__(2472));
+function setVerbose(isVerbose) {
+    (0, verbose_1.default)(isVerbose === 'true' || isVerbose === true);
+}
+exports.setVerbose = setVerbose;
 
 
 /***/ }),
