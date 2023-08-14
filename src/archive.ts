@@ -9,11 +9,11 @@ import {ArchiveOptions} from './ArchiveCommand';
 import CLIArchiveCommand from './CLIArchiveCommand';
 import LocalArtifactStore from './LocalArtifactStore';
 import LocalCacheStore from './LocalCacheStore';
-import {isErrored} from 'stream';
 import {setVerbose} from './setVerbose';
 
 export class Archive extends ArchiveAction {
   public archiveId?: string | number;
+  public threadCount?: number;
 
   async archive(): Promise<ArchiveResults> {
     log(LogLevel.Debug, `revision: ${this.revision}`);
@@ -29,6 +29,7 @@ export class Archive extends ArchiveAction {
     const archiveOptions: ArchiveOptions = {};
     const revision = this.archiveId ? this.archiveId.toString() : this.revision;
     if (revision) archiveOptions.revision = revision;
+    if (this.threadCount) archiveOptions.threadCount = this.threadCount;
 
     log(LogLevel.Info, `Archiving AppMaps with options ${JSON.stringify(archiveOptions)}}`);
 
@@ -73,9 +74,16 @@ async function runLocally() {
   parser.add_argument('-a', '--archive-id', {
     help: 'Archive id, used in place of Git revision for matrix jobs',
   });
+  parser.add_argument('--thread-count', {type: Number});
 
   const options = parser.parse_args();
-  const {directory, revision, appmap_command: appmapCommand, archive_id: archiveId} = options;
+  const {
+    directory,
+    revision,
+    appmap_command: appmapCommand,
+    archive_id: archiveId,
+    thread_count: threadCount,
+  } = options;
   setVerbose(options.verbose);
 
   if (directory) process.chdir(directory);
@@ -90,6 +98,7 @@ async function runLocally() {
   action.cacheStore = new LocalCacheStore();
   if (revision) action.revision = revision;
   if (archiveId) action.archiveId = archiveId;
+  if (threadCount) action.threadCount = parseInt(threadCount.toString(), 10);
 
   await action.archive();
 }

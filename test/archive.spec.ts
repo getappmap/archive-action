@@ -2,6 +2,8 @@ import assert from 'assert';
 import {Archive} from '../src/archive';
 import * as locateArchiveFile from '../src/locateArchiveFile';
 import * as test from './helper';
+import CLIArchiveCommand from '../src/CLIArchiveCommand';
+import * as executeCommand from '../src/executeCommand';
 
 describe('archive', () => {
   let context: test.ArchiveTestContext;
@@ -46,6 +48,24 @@ describe('archive', () => {
     expect([...context.artifactStore.artifacts.keys()].sort()).toEqual([
       'appmap-archive-full_foobar.tar',
     ]);
+  });
+
+  it('has a thread count parameter', async () => {
+    jest.spyOn(locateArchiveFile, 'default').mockResolvedValue('.appmap/archive/full/foobar.tar');
+
+    action.archiveCommand = new CLIArchiveCommand();
+    jest.spyOn(executeCommand, 'executeCommand').mockResolvedValue('');
+
+    action.threadCount = 1;
+    await action.archive();
+
+    expect(executeCommand.executeCommand).toHaveBeenCalledTimes(1);
+    expect(executeCommand.executeCommand).toHaveBeenCalledWith(
+      'appmap archive --thread-count 1',
+      false,
+      true,
+      true
+    );
   });
 
   describe('in matrix mode', () => {
