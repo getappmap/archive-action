@@ -72512,7 +72512,9 @@ class CLIArchiveCommand {
                 command += ' --no-index';
             if (options.revision)
                 command += ` --revision ${options.revision}`;
-            yield (0, executeCommand_1.executeCommand)(command);
+            if (options.threadCount)
+                command += ` --thread-count ${options.threadCount}`;
+            yield (0, executeCommand_1.executeCommand)(command, (0, verbose_1.default)(), true, true);
         });
     }
     restore(options) {
@@ -72939,6 +72941,8 @@ function setLogger(logger) {
 exports.setLogger = setLogger;
 function log(level, message) {
     if (!Logger) {
+        if (message.endsWith('\n'))
+            message = message.slice(0, -1);
         console[level](message);
         return;
     }

@@ -10,7 +10,8 @@ export default class CLIArchiveCommand implements ArchiveCommand {
     if (verbose()) command += ' --verbose';
     if (options.index === false) command += ' --no-index';
     if (options.revision) command += ` --revision ${options.revision}`;
-    await executeCommand(command);
+    if (options.threadCount) command += ` --thread-count ${options.threadCount}`;
+    await executeCommand(command, verbose(), true, true);
   }
 
   async restore(options: RestoreOptions): Promise<void> {

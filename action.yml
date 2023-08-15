@@ -1,4 +1,10 @@
 name: Build and save an AppMap archive
+description: |
+  Build an AppMap archive from a test run. In non-matrix builds, this action should be run
+  run when code is merged to the main branch. The archive is saved to the GitHub artifact store.
+  In matrix builds, this action should be run for each matrix job. The archive is saved to 
+  the action cached, and then in a subsequent job, the archives are merged into a single archive
+  using the `merge` action.
 inputs:
   directory:
     description: Command working directory.
@@ -7,19 +13,19 @@ inputs:
       0-based numerical id of a matrix job. This id is used to store the AppMap archive in the action cache.
       Once the matrix jobs complete, the `merge` action can be used to merge the archives into a single archive,
       and then save it as an artifact. If `archive-id` is set, the archive is saved to the cache. Otherwise,
-      it's uploadd to the artifact store. For a non-matrix job, `archive-id` should not be used.
-    type: number
+      it's uploaded to the artifact store. For a non-matrix job, `archive-id` should not be used.
   revision:
     description: |
       Revision (commit SHA) to name the AppMap archive with. The default is the GITHUB_SHA.
-      Note that setting this variable does not change the version of the code that's actually checked
-      out and run - it just specifies what commit the built archive is associated with. Using this variable,
-      you can make a branch off an existing commit, build an archive on that branch, and assign it to the
-      original commit that you branched from, thereby adding an AppMap archive for a historical revision.
-      In a pull request action, use `github.event.pull_request.head.sha`.
+      Under normal circumstances, the default value is correct and this input does not need to be specified.
+  thread-count:
+    description:
+      Number of worker threads to use for processing the archive. Defaults to the number of CPUs /
+      cores, as reported by Node.js. If the worker machine has a high number of CPUs/cores, the
+      archive action may become I/O-bound rather than CPU-bound, and better performance might be
+      obtained by setting this value to a lower number.
   verbose:
     description: Enable verbose logging.
-    default: false
 runs:
   using: 'node16'
   main: 'dist/archive/index.js'

@@ -72512,7 +72512,9 @@ class CLIArchiveCommand {
                 command += ' --no-index';
             if (options.revision)
                 command += ` --revision ${options.revision}`;
-            yield (0, executeCommand_1.executeCommand)(command);
+            if (options.threadCount)
+                command += ` --thread-count ${options.threadCount}`;
+            yield (0, executeCommand_1.executeCommand)(command, (0, verbose_1.default)(), true, true);
         });
     }
     restore(options) {
@@ -72808,6 +72810,8 @@ class Archive extends ArchiveAction_1.default {
             const revision = this.archiveId ? this.archiveId.toString() : this.revision;
             if (revision)
                 archiveOptions.revision = revision;
+            if (this.threadCount)
+                archiveOptions.threadCount = this.threadCount;
             (0, log_1.default)(log_1.LogLevel.Info, `Archiving AppMaps with options ${JSON.stringify(archiveOptions)}}`);
             yield this.archiveCommand.archive(archiveOptions);
             const archiveFile = yield (0, locateArchiveFile_1.default)('.');
@@ -72851,8 +72855,9 @@ function runLocally() {
         parser.add_argument('-a', '--archive-id', {
             help: 'Archive id, used in place of Git revision for matrix jobs',
         });
+        parser.add_argument('--thread-count', { type: Number });
         const options = parser.parse_args();
-        const { directory, revision, appmap_command: appmapCommand, archive_id: archiveId } = options;
+        const { directory, revision, appmap_command: appmapCommand, archive_id: archiveId, thread_count: threadCount, } = options;
         (0, setVerbose_1.setVerbose)(options.verbose);
         if (directory)
             process.chdir(directory);
@@ -72868,6 +72873,8 @@ function runLocally() {
             action.revision = revision;
         if (archiveId)
             action.archiveId = archiveId;
+        if (threadCount)
+            action.threadCount = parseInt(threadCount.toString(), 10);
         yield action.archive();
     });
 }
@@ -73079,6 +73086,8 @@ function setLogger(logger) {
 exports.setLogger = setLogger;
 function log(level, message) {
     if (!Logger) {
+        if (message.endsWith('\n'))
+            message = message.slice(0, -1);
         console[level](message);
         return;
     }

@@ -1,6 +1,7 @@
 export type ArchiveOptions = {
   revision?: string;
   index?: boolean;
+  threadCount?: number;
 };
 
 export type RestoreOptions = {

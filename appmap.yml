@@ -1,4 +1,4 @@
-name: archive-appmap-action
+name: archive-action
 packages:
   - path: build
   - path: src
