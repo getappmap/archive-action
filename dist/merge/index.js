@@ -72529,14 +72529,6 @@ class CLIArchiveCommand {
             yield (0, executeCommand_1.executeCommand)(command);
         });
     }
-    generateOpenAPI(directory) {
-        return __awaiter(this, void 0, void 0, function* () {
-            let command = `${this.toolsCommand} openapi -d ${directory} --appmap-dir . --output-file openapi.yml`;
-            if ((0, verbose_1.default)())
-                command += ' --verbose';
-            yield (0, executeCommand_1.executeCommand)(command);
-        });
-    }
 }
 exports["default"] = CLIArchiveCommand;
 
@@ -73067,11 +73059,6 @@ class Merge extends ArchiveAction_1.default {
                     yield (0, promises_1.cp)(file, (0, path_1.join)(appmapDir, (0, path_1.basename)(file)), { recursive: true });
                 }
             }
-            // TODO: Each archive directory already contains an openapi.yml file, so it would be
-            // quite possible, and much more efficient, to merge those files instead of generating
-            // a new one from scratch.
-            (0, log_1.default)(log_1.LogLevel.Info, 'Generating OpenAPI definitions');
-            yield this.archiveCommand.generateOpenAPI(appmapDir);
             (0, log_1.default)(log_1.LogLevel.Info, 'Building merged archive');
             const archiveOptions = { index: false };
             if (this.revision)

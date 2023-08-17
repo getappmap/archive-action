@@ -6,6 +6,7 @@
   "main": "build/index.js",
   "scripts": {
     "compile": "tsc",
+    "watch": "tsc --watch",
     "package": "ncc build -o dist/archive --source-map src/archive.ts && ncc build -o dist/merge --source-map src/merge.ts",
     "build": "yarn compile && yarn package",
     "test": "find test -name '*.spec.ts' -exec yarn appmap-agent-js -- jest --no-cache {} \\;",

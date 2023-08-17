@@ -13,6 +13,4 @@ export default interface ArchiveCommand {
   archive(options: ArchiveOptions): Promise<void>;
 
   restore(options: RestoreOptions): Promise<void>;
-
-  generateOpenAPI(directory: string): Promise<void>;
 }
