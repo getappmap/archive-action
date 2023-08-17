@@ -72743,6 +72743,43 @@ exports["default"] = LocalCacheStore;
 
 /***/ }),
 
+/***/ 2620:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const promises_1 = __nccwpck_require__(3292);
+const glob_1 = __nccwpck_require__(5029);
+const path_1 = __nccwpck_require__(1017);
+function anyTestFailed(appmapDir) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let testFailed = false;
+        const metadataFiles = yield (0, glob_1.glob)((0, path_1.join)(appmapDir, '**', 'metadata.json'));
+        for (const metadataFile of metadataFiles) {
+            const metadata = (yield (0, promises_1.readFile)(metadataFile, 'utf-8'));
+            if ((metadata === null || metadata === void 0 ? void 0 : metadata.test_status) === 'failed') {
+                testFailed = true;
+                break;
+            }
+        }
+        return testFailed;
+    });
+}
+exports["default"] = anyTestFailed;
+
+
+/***/ }),
+
 /***/ 8659:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -73009,6 +73046,7 @@ const CLIArchiveCommand_1 = __importDefault(__nccwpck_require__(8634));
 const LocalArtifactStore_1 = __importDefault(__nccwpck_require__(3656));
 const LocalCacheStore_1 = __importDefault(__nccwpck_require__(5419));
 const setVerbose_1 = __nccwpck_require__(5284);
+const anyTestFailed_1 = __importDefault(__nccwpck_require__(2620));
 class Merge extends ArchiveAction_1.default {
     constructor(archiveCount) {
         super();
@@ -73067,11 +73105,16 @@ class Merge extends ArchiveAction_1.default {
                     yield (0, promises_1.cp)(file, (0, path_1.join)(appmapDir, (0, path_1.basename)(file)), { recursive: true });
                 }
             }
-            // TODO: Each archive directory already contains an openapi.yml file, so it would be
-            // quite possible, and much more efficient, to merge those files instead of generating
-            // a new one from scratch.
-            (0, log_1.default)(log_1.LogLevel.Info, 'Generating OpenAPI definitions');
-            yield this.archiveCommand.generateOpenAPI(appmapDir);
+            if (yield (0, anyTestFailed_1.default)(appmapDir)) {
+                (0, log_1.default)(log_1.LogLevel.Info, 'Skipping OpenAPI generation because at least one test failed');
+            }
+            else {
+                // TODO: Each archive directory already contains an openapi.yml file, so it would be
+                // quite possible, and much more efficient, to merge those files instead of generating
+                // a new one from scratch.
+                (0, log_1.default)(log_1.LogLevel.Info, 'Generating OpenAPI definitions');
+                yield this.archiveCommand.generateOpenAPI(appmapDir);
+            }
             (0, log_1.default)(log_1.LogLevel.Info, 'Building merged archive');
             const archiveOptions = { index: false };
             if (this.revision)
