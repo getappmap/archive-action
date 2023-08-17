@@ -7,11 +7,38 @@ import * as test from './helper';
 import * as locateArchiveFile from '../src/locateArchiveFile';
 import {RestoreOptions} from '../src/ArchiveCommand';
 import {executeCommand} from '../src/executeCommand';
+import * as anyTestFailed from '../src/anyTestFailed';
 
 describe('merge', () => {
   let context: test.ArchiveTestContext;
   let archiveCount = 2;
   let action: Merge;
+
+  const placeTarFile = async (revision: string) => {
+    await mkdir(join('.appmap/archive/full'), {recursive: true});
+    await writeFile(join('.appmap/archive/full', `${revision}.tar`), '# dummy file');
+  };
+
+  const unpackTarFile = async (revision: string) => {
+    await mkdir(join('.appmap/work', revision), {
+      recursive: true,
+    });
+    await executeCommand(
+      `cp -r ${join(test.FixtureDir, 'tmp/appmap')} ${join('.appmap/work', revision)}`
+    );
+    await writeFile(
+      join('.appmap/work', revision.toString(), 'appmap_archive.json'),
+      JSON.stringify(
+        {
+          config: {
+            appmap_dir: 'tmp/appmap',
+          },
+        },
+        null,
+        2
+      )
+    );
+  };
 
   beforeEach(async () => {
     context = new test.ArchiveTestContext();
@@ -25,39 +52,6 @@ describe('merge', () => {
 
     await rm(join('tmp/appmap'), {recursive: true});
     await mkdir(join('tmp/appmap'), {recursive: true});
-  });
-
-  afterEach(async () => {
-    assert(context);
-    await context.teardown();
-  });
-
-  it('fetches archives from the cache and merges them', async () => {
-    const placeTarFile = async (revision: string) => {
-      await mkdir(join('.appmap/archive/full'), {recursive: true});
-      await writeFile(join('.appmap/archive/full', `${revision}.tar`), '# dummy file');
-    };
-
-    const unpackTarFile = async (revision: string) => {
-      await mkdir(join('.appmap/work', revision), {
-        recursive: true,
-      });
-      await executeCommand(
-        `cp -r ${join(test.FixtureDir, 'tmp/appmap')} ${join('.appmap/work', revision)}`
-      );
-      await writeFile(
-        join('.appmap/work', revision.toString(), 'appmap_archive.json'),
-        JSON.stringify(
-          {
-            config: {
-              appmap_dir: 'tmp/appmap',
-            },
-          },
-          null,
-          2
-        )
-      );
-    };
 
     context.noCacheStore.restore = jest
       .fn()
@@ -80,6 +74,15 @@ describe('merge', () => {
       });
 
     jest.spyOn(locateArchiveFile, 'default').mockResolvedValue('.appmap/archive/full/402dec8.tar');
+  });
+
+  afterEach(async () => {
+    assert(context);
+    await context.teardown();
+  });
+
+  it('fetches archives from the cache and merges them', async () => {
+    jest.spyOn(anyTestFailed, 'default').mockResolvedValue(false);
 
     await action.merge();
 
@@ -100,5 +103,20 @@ describe('merge', () => {
         options: {index: false},
       },
     ]);
+  });
+
+  describe('when a test has failed', () => {
+    it('skips OpenAPI generation', async () => {
+      jest.spyOn(anyTestFailed, 'default').mockResolvedValue(true);
+
+      await action.merge();
+
+      expect(context.archiveCommand.commands).toEqual([
+        {
+          command: 'archive',
+          options: {index: false},
+        },
+      ]);
+    });
   });
 });

@@ -10,11 +10,11 @@ import {glob} from 'glob';
 import {basename, join} from 'path';
 import {existsSync} from 'fs';
 import {ArgumentParser} from 'argparse';
-import verbose from './verbose';
 import CLIArchiveCommand from './CLIArchiveCommand';
 import LocalArtifactStore from './LocalArtifactStore';
 import LocalCacheStore from './LocalCacheStore';
 import {setVerbose} from './setVerbose';
+import anyTestFailed from './anyTestFailed';
 
 export class Merge extends ArchiveAction {
   constructor(public archiveCount: number) {
@@ -90,11 +90,15 @@ export class Merge extends ArchiveAction {
       }
     }
 
-    // TODO: Each archive directory already contains an openapi.yml file, so it would be
-    // quite possible, and much more efficient, to merge those files instead of generating
-    // a new one from scratch.
-    log(LogLevel.Info, 'Generating OpenAPI definitions');
-    await this.archiveCommand.generateOpenAPI(appmapDir);
+    if (await anyTestFailed(appmapDir)) {
+      log(LogLevel.Info, 'Skipping OpenAPI generation because at least one test failed');
+    } else {
+      // TODO: Each archive directory already contains an openapi.yml file, so it would be
+      // quite possible, and much more efficient, to merge those files instead of generating
+      // a new one from scratch.
+      log(LogLevel.Info, 'Generating OpenAPI definitions');
+      await this.archiveCommand.generateOpenAPI(appmapDir);
+    }
 
     log(LogLevel.Info, 'Building merged archive');
     const archiveOptions: ArchiveOptions = {index: false};
