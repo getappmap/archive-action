@@ -60,3 +60,9 @@ jobs:
         with:
           add: dist
           message: 'chore: Packaged distribution of the GitHub action'
+
+      - uses: rickstaa/action-create-tag@v1
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          tag: v1
+          tag_exists_error: false
