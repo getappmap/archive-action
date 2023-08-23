@@ -1,10 +1,9 @@
 name: Build and save an AppMap archive
+branding:
+  icon: archive
+  color: purple
 description: |
-  Build an AppMap archive from a test run. In non-matrix builds, this action should be run
-  run when code is merged to the main branch. The archive is saved to the GitHub artifact store.
-  In matrix builds, this action should be run for each matrix job. The archive is saved to 
-  the action cached, and then in a subsequent job, the archives are merged into a single archive
-  using the `merge` action.
+  Build an AppMap archive from a test run, to facilitate AppMap Analysis.
 inputs:
   directory:
     description: Command working directory.
