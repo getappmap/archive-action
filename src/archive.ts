@@ -10,6 +10,7 @@ import CLIArchiveCommand from './CLIArchiveCommand';
 import LocalArtifactStore from './LocalArtifactStore';
 import LocalCacheStore from './LocalCacheStore';
 import {setVerbose} from './setVerbose';
+import uploadMetadata from './uploadMetadata';
 
 export class Archive extends ArchiveAction {
   public archiveId?: string | number;
@@ -46,6 +47,8 @@ export class Archive extends ArchiveAction {
       log(LogLevel.Info, `Uploading archive ${archiveFile}`);
       await this.uploadArtifact(archiveFile);
     }
+
+    await uploadMetadata(this.artifactStore);
 
     return {archiveFile};
   }
