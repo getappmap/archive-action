@@ -36,6 +36,14 @@
     "@actions/http-client" "^2.0.1"
     uuid "^8.3.2"
 
+"@actions/core@^1.10.1":
+  version "1.10.1"
+  resolved "https://registry.yarnpkg.com/@actions/core/-/core-1.10.1.tgz#61108e7ac40acae95ee36da074fa5850ca4ced8a"
+  integrity sha512-3lBR9EDAY+iYIpTnTIXmWcNbX3T2kCkAEQGIQx4NVQ0575nk2k3GRZDTPQG+vVtS2izSLmINlxXf0uLtnrTP+g==
+  dependencies:
+    "@actions/http-client" "^2.0.1"
+    uuid "^8.3.2"
+
 "@actions/exec@^1.0.1":
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/@actions/exec/-/exec-1.1.1.tgz#2e43f28c54022537172819a7cf886c844221a611"
@@ -80,6 +88,13 @@
   dependencies:
     "@jridgewell/gen-mapping" "^0.1.0"
     "@jridgewell/trace-mapping" "^0.3.9"
+
+"@appland/action-utils@https://github.com/getappmap/action-utils#feat/initial-release":
+  version "1.0.0"
+  resolved "https://github.com/getappmap/action-utils#08dc48f27d6000b1f28cf673c75f8f9343bc8d3f"
+  dependencies:
+    "@actions/core" "^1.10.1"
+    node-fetch "^2"
 
 "@appland/appmap-agent-js@^13.8.0":
   version "13.8.0"
@@ -2698,6 +2713,13 @@ net-socket-messaging@^0.1.6:
   version "0.1.6"
   resolved "https://registry.yarnpkg.com/net-socket-messaging/-/net-socket-messaging-0.1.6.tgz#834c708557b57ab9f01f159a3fab20e1a0dd5158"
   integrity sha512-BgaXV5maKblBgFE45/uXghIyC/IzbxRjnBU6g5BYBTVIABbnzkN/G23lIj6vHunnamg9A6pI8v887u+WxkuJvg==
+
+node-fetch@^2:
+  version "2.7.0"
+  resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.7.0.tgz#d0f0fa6e3e2dc1d27efcd8ad99d550bda94d187d"
+  integrity sha512-c4FRfUm/dbcWZ7U+1Wq0AwCyFL+3nt2bEw05wfxSz+DWpWsitgmSgYmy2dQdWyKC1694ELPqMs/YzUSNozLt8A==
+  dependencies:
+    whatwg-url "^5.0.0"
 
 node-fetch@^2.6.7:
   version "2.6.9"

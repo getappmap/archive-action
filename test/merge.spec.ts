@@ -2,11 +2,12 @@ import assert from 'assert';
 import {join} from 'path';
 import {mkdir, writeFile} from 'fs/promises';
 import {rm} from 'fs/promises';
+import {executeCommand} from '@appland/action-utils';
+
 import {Merge} from '../src/merge';
 import * as test from './helper';
 import * as locateArchiveFile from '../src/locateArchiveFile';
 import {RestoreOptions} from '../src/ArchiveCommand';
-import {executeCommand} from '../src/executeCommand';
 
 describe('merge', () => {
   let context: test.ArchiveTestContext;

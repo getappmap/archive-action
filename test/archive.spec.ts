@@ -1,9 +1,11 @@
 import assert from 'assert';
+import * as actionUtils from '@appland/action-utils';
+import {executeCommand} from '@appland/action-utils';
+
 import {Archive} from '../src/archive';
 import * as locateArchiveFile from '../src/locateArchiveFile';
 import * as test from './helper';
 import CLIArchiveCommand from '../src/CLIArchiveCommand';
-import * as executeCommand from '../src/executeCommand';
 
 describe('archive', () => {
   let context: test.ArchiveTestContext;
@@ -54,18 +56,16 @@ describe('archive', () => {
     jest.spyOn(locateArchiveFile, 'default').mockResolvedValue('.appmap/archive/full/foobar.tar');
 
     action.archiveCommand = new CLIArchiveCommand();
-    jest.spyOn(executeCommand, 'executeCommand').mockResolvedValue('');
+    jest.spyOn(actionUtils, 'executeCommand').mockResolvedValue('');
 
     action.threadCount = 1;
     await action.archive();
 
-    expect(executeCommand.executeCommand).toHaveBeenCalledTimes(1);
-    expect(executeCommand.executeCommand).toHaveBeenCalledWith(
-      'appmap archive --thread-count 1',
-      false,
-      true,
-      true
-    );
+    expect(executeCommand).toHaveBeenCalledTimes(1);
+    expect(executeCommand).toHaveBeenCalledWith('appmap archive --thread-count 1', {
+      printStdout: true,
+      printStderr: true,
+    });
   });
 
   describe('in matrix mode', () => {

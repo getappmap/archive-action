@@ -1,15 +1,15 @@
 import * as core from '@actions/core';
 import {ArgumentParser} from 'argparse';
+import {log, LogLevel, verbose} from '@appland/action-utils';
 import assert from 'assert';
+
 import ArchiveAction from './ArchiveAction';
 import locateArchiveFile from './locateArchiveFile';
-import log, {LogLevel} from './log';
 import ArchiveResults from './ArchiveResults';
 import {ArchiveOptions} from './ArchiveCommand';
 import CLIArchiveCommand from './CLIArchiveCommand';
 import LocalArtifactStore from './LocalArtifactStore';
 import LocalCacheStore from './LocalCacheStore';
-import {setVerbose} from './setVerbose';
 
 export class Archive extends ArchiveAction {
   public archiveId?: string | number;
@@ -54,7 +54,7 @@ export class Archive extends ArchiveAction {
 async function runInGitHub() {
   const archiveId = core.getInput('archive-id');
   const isVerbose = core.getInput('verbose');
-  setVerbose(isVerbose);
+  verbose(isVerbose);
 
   const action = new Archive();
   ArchiveAction.prepareAction(action);
@@ -84,7 +84,7 @@ async function runLocally() {
     archive_id: archiveId,
     thread_count: threadCount,
   } = options;
-  setVerbose(options.verbose);
+  verbose(options.verbose);
 
   if (directory) process.chdir(directory);
 

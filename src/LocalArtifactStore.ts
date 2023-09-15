@@ -1,5 +1,5 @@
 import ArtifactStore from './ArtifactStore';
-import log, {LogLevel} from './log';
+import {log, LogLevel} from '@appland/action-utils';
 
 export default class LocalArtifactStore implements ArtifactStore {
   uploadArtifact(name: string, path: string): Promise<void> {
