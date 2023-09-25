@@ -1,5 +1,5 @@
 import CacheStore from './CacheStore';
-import log, {LogLevel} from './log';
+import {log, LogLevel} from '@appland/action-utils';
 
 export default class LocalCacheStore implements CacheStore {
   save(paths: string[], key: string): Promise<void> {

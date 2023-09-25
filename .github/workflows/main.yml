@@ -34,10 +34,10 @@ jobs:
           project-type: yarn
 
       - name: Build
-        run: yarn build
+        run: yarn package
 
       - name: Test
-        run: yarn test
+        run: yarn appmap
 
       - name: Archive AppMaps
         if: github.event_name != 'pull_request'

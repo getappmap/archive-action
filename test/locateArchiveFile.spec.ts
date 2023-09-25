@@ -1,7 +1,8 @@
 import {cp, mkdir, rm, writeFile} from 'fs/promises';
+import {join} from 'path';
+
 import locateArchiveFile from '../src/locateArchiveFile';
 import * as test from './helper';
-import {join} from 'path';
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 

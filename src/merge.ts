@@ -1,20 +1,19 @@
 import * as core from '@actions/core';
 import assert from 'assert';
 import {cp, mkdir, readFile, stat} from 'fs/promises';
-import locateArchiveFile from './locateArchiveFile';
-import ArchiveAction from './ArchiveAction';
-import log, {LogLevel} from './log';
-import ArchiveResults from './ArchiveResults';
-import {ArchiveOptions, RestoreOptions} from './ArchiveCommand';
 import {glob} from 'glob';
 import {basename, join} from 'path';
 import {existsSync} from 'fs';
 import {ArgumentParser} from 'argparse';
-import verbose from './verbose';
+import {ActionLogger, log, LogLevel, setLogger, verbose} from '@appland/action-utils';
+
+import locateArchiveFile from './locateArchiveFile';
+import ArchiveAction from './ArchiveAction';
+import ArchiveResults from './ArchiveResults';
+import {ArchiveOptions, RestoreOptions} from './ArchiveCommand';
 import CLIArchiveCommand from './CLIArchiveCommand';
 import LocalArtifactStore from './LocalArtifactStore';
 import LocalCacheStore from './LocalCacheStore';
-import {setVerbose} from './setVerbose';
 
 export class Merge extends ArchiveAction {
   constructor(public archiveCount: number) {
@@ -117,6 +116,8 @@ export class Merge extends ArchiveAction {
 }
 
 async function runInGitHub() {
+  setLogger(new ActionLogger());
+
   const archiveCount = core.getInput('archive-count');
   assert(archiveCount, 'archive-count is not set');
 
@@ -147,7 +148,7 @@ async function runLocally() {
     job_attempt_id: jobAttemptId,
   } = options;
 
-  setVerbose(options.verbose);
+  verbose(options.verbose);
 
   if (directory) process.chdir(directory);
 

@@ -1,14 +1,13 @@
 import * as core from '@actions/core';
 import {basename, dirname} from 'path';
-import log, {LogLevel} from './log';
+import {log, LogLevel, verbose} from '@appland/action-utils';
+
 import ArtifactStore from './ArtifactStore';
 import CacheStore from './CacheStore';
 import ArchiveCommand from './ArchiveCommand';
 import GitHubArtifactStore from './GitHubArtifactStore';
 import GitHubCacheStore from './GitHubCacheStore';
 import CLIArchiveCommand from './CLIArchiveCommand';
-import verbose from './verbose';
-import {setVerbose} from './setVerbose';
 
 export default abstract class ArchiveAction {
   public jobRunId: string | number | undefined = process.env.GITHUB_RUN_ID;
@@ -33,7 +32,7 @@ export default abstract class ArchiveAction {
   }
 
   static prepareAction(action: ArchiveAction) {
-    setVerbose(core.getInput('verbose'));
+    verbose(core.getInput('verbose'));
 
     const directory = core.getInput('directory');
     // commit-sha is checked for backwards compatibility

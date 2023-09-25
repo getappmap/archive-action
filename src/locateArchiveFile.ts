@@ -1,7 +1,7 @@
 import {existsSync} from 'fs';
 import {glob} from 'glob';
 import {join} from 'path';
-import log, {LogLevel} from './log';
+import {log, LogLevel} from '@appland/action-utils';
 import {stat} from 'fs/promises';
 
 export default async function locateArchiveFile(workDir: string): Promise<string> {
