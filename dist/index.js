@@ -401,6 +401,7 @@ function runInGitHub() {
         const archiveId = core.getInput('archive-id');
         const isVerbose = core.getInput('verbose');
         (0, action_utils_1.verbose)(isVerbose);
+        (0, action_utils_1.setLogger)(new action_utils_1.ActionLogger());
         const action = new Archive();
         ArchiveAction_1.default.prepareAction(action);
         if (archiveId)

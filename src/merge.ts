@@ -5,7 +5,7 @@ import {glob} from 'glob';
 import {basename, join} from 'path';
 import {existsSync} from 'fs';
 import {ArgumentParser} from 'argparse';
-import {log, LogLevel, verbose} from '@appland/action-utils';
+import {ActionLogger, log, LogLevel, setLogger, verbose} from '@appland/action-utils';
 
 import locateArchiveFile from './locateArchiveFile';
 import ArchiveAction from './ArchiveAction';
@@ -116,6 +116,8 @@ export class Merge extends ArchiveAction {
 }
 
 async function runInGitHub() {
+  setLogger(new ActionLogger());
+
   const archiveCount = core.getInput('archive-count');
   assert(archiveCount, 'archive-count is not set');
 

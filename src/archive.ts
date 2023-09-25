@@ -1,6 +1,6 @@
 import * as core from '@actions/core';
 import {ArgumentParser} from 'argparse';
-import {log, LogLevel, verbose} from '@appland/action-utils';
+import {ActionLogger, log, LogLevel, setLogger, verbose} from '@appland/action-utils';
 import assert from 'assert';
 
 import ArchiveAction from './ArchiveAction';
@@ -55,6 +55,7 @@ async function runInGitHub() {
   const archiveId = core.getInput('archive-id');
   const isVerbose = core.getInput('verbose');
   verbose(isVerbose);
+  setLogger(new ActionLogger());
 
   const action = new Archive();
   ArchiveAction.prepareAction(action);
