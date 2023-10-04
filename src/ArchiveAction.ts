@@ -16,6 +16,7 @@ export default abstract class ArchiveAction {
   public artifactStore: ArtifactStore = new GitHubArtifactStore();
   public cacheStore: CacheStore = new GitHubCacheStore();
   public archiveCommand: ArchiveCommand = new CLIArchiveCommand();
+  public githubToken?: string;
   public revision?: string;
 
   static cacheKey(
@@ -44,6 +45,8 @@ export default abstract class ArchiveAction {
       process.chdir(directory);
     }
     if (revision) action.revision = revision;
+
+    action.githubToken = core.getInput('github-token');
   }
 
   protected async uploadArtifact(archiveFile: string): Promise<{archiveFile: string}> {

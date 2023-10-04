@@ -5,9 +5,7 @@ import {log, LogLevel} from '@appland/action-utils';
 import {stat} from 'fs/promises';
 
 export default async function locateArchiveFile(workDir: string): Promise<string> {
-  const archiveFiles = (
-    await glob(join(workDir, '.appmap', 'archive', '**', '*.tar'), {dot: true})
-  ).filter(file => existsSync(file));
+  const archiveFiles = await glob(join(workDir, '.appmap', 'archive', '**', '*.tar'), {dot: true});
   const archiveFileTimes = new Map<string, number>();
   await Promise.all(
     archiveFiles.map(async file => archiveFileTimes.set(file, (await stat(file)).mtimeMs))
