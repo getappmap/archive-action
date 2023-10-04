@@ -11,7 +11,7 @@
     "appmap": "appmap-agent-js -- jest --no-cache",
     "clean": "rm -rf build dist tmp",
     "format": "prettier --write '**/*.ts'",
-    "package": "yarn build && ncc build --source-map --license licenses.txt"
+    "package": "yarn build && ncc build -o dist/archive --source-map src/archive.ts && ncc build -o dist/merge --source-map src/merge.ts"
   },
   "devDependencies": {
     "@appland/appmap-agent-js": "^13.8.0",
