@@ -37,6 +37,7 @@ export default class CLIArchiveCommand implements ArchiveCommand {
     {
       let command = `${this.toolsCommand} inventory-report`;
       if (verbose()) command += ' --verbose';
+      command += ' --template-name welcome';
       command += ' ' + join(directory, `${revision}.json`);
       command += ' ' + join(directory, `${revision}.md`);
       await executeCommand(command);

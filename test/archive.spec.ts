@@ -54,7 +54,7 @@ describe('archive', () => {
     );
     expect(executeCommand).toHaveBeenNthCalledWith(
       3,
-      'appmap inventory-report .appmap/inventory/HEAD.json .appmap/inventory/HEAD.md'
+      'appmap inventory-report --template-name welcome .appmap/inventory/HEAD.json .appmap/inventory/HEAD.md'
     );
   });
 
