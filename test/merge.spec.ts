@@ -94,7 +94,7 @@ describe('merge', () => {
     expect(context.archiveCommand.commands).toEqual([
       {
         command: 'openapi',
-        options: {directory: 'tmp/appmap'},
+        options: {},
       },
       {
         command: 'archive',

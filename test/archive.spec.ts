@@ -27,18 +27,35 @@ describe('archive', () => {
     await context.teardown();
   });
 
-  it('build and store an AppMap archive', async () => {
+  it('build and store AppMap archive and inventory', async () => {
     jest.spyOn(locateArchiveFile, 'default').mockResolvedValue('.appmap/archive/full/402dec8.tar');
+
+    action.archiveCommand = new CLIArchiveCommand();
+    jest.spyOn(actionUtils, 'executeCommand').mockResolvedValue('');
 
     await action.archive();
 
     expect([...context.artifactStore.artifacts.keys()].sort()).toEqual([
       'appmap-archive-full_402dec8.tar',
+      'appmap-inventory_HEAD.tar',
     ]);
     expect(context.artifactStore.artifacts.get('appmap-archive-full_402dec8.tar')).toBe(
       '.appmap/archive/full/402dec8.tar'
     );
-    console.log(context.archiveCommand.commands);
+
+    expect(executeCommand).toHaveBeenCalledTimes(3);
+    expect(executeCommand).toHaveBeenNthCalledWith(1, 'appmap archive', {
+      printStdout: true,
+      printStderr: true,
+    });
+    expect(executeCommand).toHaveBeenNthCalledWith(
+      2,
+      'appmap inventory .appmap/inventory/HEAD.json'
+    );
+    expect(executeCommand).toHaveBeenNthCalledWith(
+      3,
+      'appmap inventory-report .appmap/inventory/HEAD.json .appmap/inventory/HEAD.md'
+    );
   });
 
   it('assign the archive to an arbitrary revision', async () => {
@@ -49,6 +66,7 @@ describe('archive', () => {
 
     expect([...context.artifactStore.artifacts.keys()].sort()).toEqual([
       'appmap-archive-full_foobar.tar',
+      'appmap-inventory_foobar.tar',
     ]);
   });
 
@@ -61,7 +79,7 @@ describe('archive', () => {
     action.threadCount = 1;
     await action.archive();
 
-    expect(executeCommand).toHaveBeenCalledTimes(1);
+    expect(executeCommand).toHaveBeenCalledTimes(3);
     expect(executeCommand).toHaveBeenCalledWith('appmap archive --thread-count 1', {
       printStdout: true,
       printStderr: true,
@@ -80,7 +98,7 @@ describe('archive', () => {
       action.archiveId = archiveId;
       await action.archive();
 
-      expect([...context.artifactStore.artifacts.keys()]).toEqual([]);
+      expect([...context.artifactStore.artifacts.keys()]).toEqual(['appmap-inventory_1.tar']);
       expect(context.noCacheStore.save).toHaveBeenCalledTimes(1);
       expect(context.noCacheStore.save).toHaveBeenCalledWith(
         [`.appmap/archive/full/${archiveId}.tar`],

@@ -1,6 +1,8 @@
 import {executeCommand, verbose} from '@appland/action-utils';
 
-import ArchiveCommand, {ArchiveOptions, RestoreOptions} from './ArchiveCommand';
+import ArchiveCommand, {ArchiveOptions, INVENTORY_DIR, RestoreOptions} from './ArchiveCommand';
+import {mkdir} from 'fs/promises';
+import {join} from 'path';
 
 export default class CLIArchiveCommand implements ArchiveCommand {
   public toolsCommand = 'appmap';
@@ -20,6 +22,25 @@ export default class CLIArchiveCommand implements ArchiveCommand {
     if (options.revision) command += ` --revision ${options.revision}`;
     if (options.exact) command += ' --exact';
     await executeCommand(command);
+  }
+
+  async generateInventoryReport(revision: string): Promise<void> {
+    const directory = join(INVENTORY_DIR);
+    await mkdir(directory, {recursive: true});
+
+    {
+      let command = `${this.toolsCommand} inventory`;
+      if (verbose()) command += ' --verbose';
+      command += ' ' + join(directory, `${revision}.json`);
+      await executeCommand(command);
+    }
+    {
+      let command = `${this.toolsCommand} inventory-report`;
+      if (verbose()) command += ' --verbose';
+      command += ' ' + join(directory, `${revision}.json`);
+      command += ' ' + join(directory, `${revision}.md`);
+      await executeCommand(command);
+    }
   }
 
   async generateOpenAPI(): Promise<void> {
