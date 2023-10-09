@@ -29,7 +29,6 @@ jobs:
       - name: Install AppMap tools
         uses: getappmap/install-action@v1
         with:
-          tools-url: https://github.com/getappmap/appmap-js/releases/download/%40appland%2Fappmap-faster-v1.0-pre.2/appmap-linux-x64
           github-token: ${{ secrets.GITHUB_TOKEN }}
           project-type: yarn
 
@@ -44,7 +43,7 @@ jobs:
         uses: ./
 
       - name: Analyze AppMaps
-        uses: getappmap/analyze-action@v1-pre.16
+        uses: getappmap/analyze-action@v1
         if: (success() || failure()) && github.event_name == 'pull_request'
         with:
           base-revision: ${{ github.event.pull_request.base.sha }}

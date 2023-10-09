@@ -9,10 +9,14 @@ export type RestoreOptions = {
   exact: boolean;
 };
 
+export const INVENTORY_DIR = '.appmap/inventory';
+
 export default interface ArchiveCommand {
   archive(options: ArchiveOptions): Promise<void>;
 
   restore(options: RestoreOptions): Promise<void>;
 
-  generateOpenAPI(directory: string): Promise<void>;
+  generateInventoryReport(revision: string): Promise<void>;
+
+  generateOpenAPI(): Promise<void>;
 }

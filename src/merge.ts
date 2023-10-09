@@ -93,7 +93,7 @@ export class Merge extends ArchiveAction {
     // quite possible, and much more efficient, to merge those files instead of generating
     // a new one from scratch.
     log(LogLevel.Info, 'Generating OpenAPI definitions');
-    await this.archiveCommand.generateOpenAPI(appmapDir);
+    await this.archiveCommand.generateOpenAPI();
 
     log(LogLevel.Info, 'Building merged archive');
     const archiveOptions: ArchiveOptions = {index: false};

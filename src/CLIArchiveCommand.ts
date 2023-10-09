@@ -1,6 +1,8 @@
 import {executeCommand, verbose} from '@appland/action-utils';
 
-import ArchiveCommand, {ArchiveOptions, RestoreOptions} from './ArchiveCommand';
+import ArchiveCommand, {ArchiveOptions, INVENTORY_DIR, RestoreOptions} from './ArchiveCommand';
+import {mkdir} from 'fs/promises';
+import {join} from 'path';
 
 export default class CLIArchiveCommand implements ArchiveCommand {
   public toolsCommand = 'appmap';
@@ -22,8 +24,28 @@ export default class CLIArchiveCommand implements ArchiveCommand {
     await executeCommand(command);
   }
 
-  async generateOpenAPI(directory: string): Promise<void> {
-    let command = `${this.toolsCommand} openapi -d . --appmap-dir ${directory} --output-file openapi.yml`;
+  async generateInventoryReport(revision: string): Promise<void> {
+    const directory = join(INVENTORY_DIR);
+    await mkdir(directory, {recursive: true});
+
+    {
+      let command = `${this.toolsCommand} inventory`;
+      if (verbose()) command += ' --verbose';
+      command += ' ' + join(directory, `${revision}.json`);
+      await executeCommand(command);
+    }
+    {
+      let command = `${this.toolsCommand} inventory-report`;
+      if (verbose()) command += ' --verbose';
+      command += ' --template-name welcome';
+      command += ' ' + join(directory, `${revision}.json`);
+      command += ' ' + join(directory, `${revision}.md`);
+      await executeCommand(command);
+    }
+  }
+
+  async generateOpenAPI(): Promise<void> {
+    let command = `${this.toolsCommand} openapi --output-file openapi.yml`;
     if (verbose()) command += ' --verbose';
     await executeCommand(command);
   }
