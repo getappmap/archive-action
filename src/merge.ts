@@ -116,10 +116,17 @@ export class Merge extends ArchiveAction {
 }
 
 async function runInGitHub() {
+  verbose(core.getInput('verbose'));
   setLogger(new ActionLogger());
 
+  const directory = core.getInput('directory');
   const archiveCount = core.getInput('archive-count');
   assert(archiveCount, 'archive-count is not set');
+
+  if (directory) {
+    log(LogLevel.Info, `Changing working directory: ${directory}`);
+    process.chdir(directory);
+  }
 
   const action = new Merge(parseInt(archiveCount, 10));
   ArchiveAction.prepareAction(action);
