@@ -79218,9 +79218,15 @@ class Merge extends ArchiveAction_1.default {
 exports.Merge = Merge;
 function runInGitHub() {
     return __awaiter(this, void 0, void 0, function* () {
+        (0, action_utils_1.verbose)(core.getInput('verbose'));
         (0, action_utils_1.setLogger)(new action_utils_1.ActionLogger());
+        const directory = core.getInput('directory');
         const archiveCount = core.getInput('archive-count');
         (0, assert_1.default)(archiveCount, 'archive-count is not set');
+        if (directory) {
+            (0, action_utils_1.log)(action_utils_1.LogLevel.Info, `Changing working directory: ${directory}`);
+            process.chdir(directory);
+        }
         const action = new Merge(parseInt(archiveCount, 10));
         ArchiveAction_1.default.prepareAction(action);
         yield action.merge();

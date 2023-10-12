@@ -79,10 +79,16 @@ export class Archive extends ArchiveAction {
 }
 
 async function runInGitHub() {
-  const archiveId = core.getInput('archive-id');
-  const isVerbose = core.getInput('verbose');
-  verbose(isVerbose);
+  verbose(core.getInput('verbose'));
   setLogger(new ActionLogger());
+
+  const archiveId = core.getInput('archive-id');
+  const directory = core.getInput('directory');
+
+  if (directory) {
+    log(LogLevel.Info, `Changing working directory: ${directory}`);
+    process.chdir(directory);
+  }
 
   const action = new Archive();
   ArchiveAction.prepareAction(action);

@@ -79150,10 +79150,14 @@ class Archive extends ArchiveAction_1.default {
 exports.Archive = Archive;
 function runInGitHub() {
     return __awaiter(this, void 0, void 0, function* () {
-        const archiveId = core.getInput('archive-id');
-        const isVerbose = core.getInput('verbose');
-        (0, action_utils_1.verbose)(isVerbose);
+        (0, action_utils_1.verbose)(core.getInput('verbose'));
         (0, action_utils_1.setLogger)(new action_utils_1.ActionLogger());
+        const archiveId = core.getInput('archive-id');
+        const directory = core.getInput('directory');
+        if (directory) {
+            (0, action_utils_1.log)(action_utils_1.LogLevel.Info, `Changing working directory: ${directory}`);
+            process.chdir(directory);
+        }
         const action = new Archive();
         ArchiveAction_1.default.prepareAction(action);
         if (archiveId)
