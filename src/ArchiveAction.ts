@@ -32,19 +32,12 @@ export default abstract class ArchiveAction {
     ].join('-');
   }
 
-  static prepareAction(action: ArchiveAction) {
-    verbose(core.getInput('verbose'));
-
+  static applyGitHubActionInputs(action: ArchiveAction) {
     const directory = core.getInput('directory');
-    // commit-sha is checked for backwards compatibility
-    const revision =
-      core.getInput('revision') || core.getInput('commit-sha') || process.env.GITHUB_SHA;
-
     if (directory) {
       log(LogLevel.Info, `Changing to working directory ${directory}`);
       process.chdir(directory);
     }
-    if (revision) action.revision = revision;
 
     action.githubToken = core.getInput('github-token');
   }

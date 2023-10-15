@@ -119,17 +119,15 @@ async function runInGitHub() {
   verbose(core.getInput('verbose'));
   setLogger(new ActionLogger());
 
-  const directory = core.getInput('directory');
   const archiveCount = core.getInput('archive-count');
   assert(archiveCount, 'archive-count is not set');
-
-  if (directory) {
-    log(LogLevel.Info, `Changing working directory: ${directory}`);
-    process.chdir(directory);
-  }
+  const revision = core.getInput('revision') || process.env.GITHUB_SHA;
 
   const action = new Merge(parseInt(archiveCount, 10));
-  ArchiveAction.prepareAction(action);
+  ArchiveAction.applyGitHubActionInputs(action);
+
+  if (revision) action.revision = revision;
+
   await action.merge();
 }
 
