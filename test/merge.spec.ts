@@ -98,7 +98,7 @@ describe('merge', () => {
       },
       {
         command: 'archive',
-        options: {index: false},
+        options: {analyze: false},
       },
     ]);
   });

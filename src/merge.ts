@@ -96,7 +96,7 @@ export class Merge extends ArchiveAction {
     await this.archiveCommand.generateOpenAPI();
 
     log(LogLevel.Info, 'Building merged archive');
-    const archiveOptions: ArchiveOptions = {index: false};
+    const archiveOptions: ArchiveOptions = {analyze: false};
     if (this.revision) archiveOptions.revision = this.revision;
     await this.archiveCommand.archive(archiveOptions);
 

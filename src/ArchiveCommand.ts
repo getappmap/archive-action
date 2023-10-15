@@ -1,6 +1,6 @@
 export type ArchiveOptions = {
   revision?: string;
-  index?: boolean;
+  analyze?: boolean;
   threadCount?: number;
 };
 
