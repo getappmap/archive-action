@@ -90,10 +90,6 @@ export class Merge extends ArchiveAction {
       }
     }
 
-    // TODO: This can be removed since it's performed by the archive command
-    log(LogLevel.Info, 'Generating OpenAPI definitions');
-    await this.archiveCommand.generateOpenAPI();
-
     // Check that there are no existing archive files, for unambiguous upload
     {
       const archiveFiles = await listArchiveFiles('.');
