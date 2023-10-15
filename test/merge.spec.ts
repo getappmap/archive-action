@@ -3,6 +3,7 @@ import {join} from 'path';
 import {mkdir, writeFile} from 'fs/promises';
 import {rm} from 'fs/promises';
 import {executeCommand} from '@appland/action-utils';
+import * as actionUtils from '@appland/action-utils';
 
 import {Merge} from '../src/merge';
 import * as test from './helper';
@@ -10,6 +11,7 @@ import * as locateArchiveFile from '../src/locateArchiveFile';
 import {RestoreOptions} from '../src/ArchiveCommand';
 
 describe('merge', () => {
+  let logMessages: Record<string, string[]> = {};
   let context: test.ArchiveTestContext;
   let archiveCount = 2;
   let action: Merge;
@@ -32,8 +34,17 @@ describe('merge', () => {
     assert(context);
     await context.teardown();
   });
+  afterEach(() => jest.restoreAllMocks());
 
   it('fetches archives from the cache and merges them', async () => {
+    jest
+      .spyOn(actionUtils, 'log')
+      .mockImplementation((logLevel: actionUtils.LogLevel, message: string) => {
+        logMessages ||= {};
+        logMessages[logLevel] ||= [];
+        logMessages[logLevel].push(message);
+      });
+
     const placeTarFile = async (revision: string) => {
       await mkdir(join('.appmap/archive/full'), {recursive: true});
       await writeFile(join('.appmap/archive/full', `${revision}.tar`), '# dummy file');
@@ -83,6 +94,8 @@ describe('merge', () => {
     jest.spyOn(locateArchiveFile, 'default').mockResolvedValue('.appmap/archive/full/402dec8.tar');
 
     await action.merge();
+
+    expect(logMessages[actionUtils.LogLevel.Warn] || []).toEqual([]);
 
     expect([...context.artifactStore.artifacts.keys()].sort()).toEqual([
       'appmap-archive-full_402dec8.tar',
