@@ -78822,8 +78822,8 @@ class CLIArchiveCommand {
             let command = `${this.toolsCommand} archive`;
             if ((0, action_utils_1.verbose)())
                 command += ' --verbose';
-            if (options.index === false)
-                command += ' --no-index';
+            if (options.analyze === false)
+                command += ' --no-analyze';
             if (options.revision)
                 command += ` --revision ${options.revision}`;
             if (options.threadCount)
@@ -79218,16 +79218,24 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.listArchiveFiles = void 0;
 const glob_1 = __nccwpck_require__(5029);
 const path_1 = __nccwpck_require__(1017);
 const action_utils_1 = __nccwpck_require__(1259);
 const promises_1 = __nccwpck_require__(3292);
-function locateArchiveFile(workDir) {
+function listArchiveFiles(workDir) {
     return __awaiter(this, void 0, void 0, function* () {
         const archiveFiles = yield (0, glob_1.glob)((0, path_1.join)(workDir, '.appmap', 'archive', '**', '*.tar'), { dot: true });
         const archiveFileTimes = new Map();
         yield Promise.all(archiveFiles.map((file) => __awaiter(this, void 0, void 0, function* () { return archiveFileTimes.set(file, (yield (0, promises_1.stat)(file)).mtimeMs); })));
         archiveFiles.sort((a, b) => archiveFileTimes.get(b) - archiveFileTimes.get(a));
+        return archiveFiles;
+    });
+}
+exports.listArchiveFiles = listArchiveFiles;
+function locateArchiveFile(workDir) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const archiveFiles = yield listArchiveFiles(workDir);
         if (archiveFiles.length === 0)
             throw new Error(`No AppMap archives found in ${(0, path_1.join)(process.cwd(), workDir)}`);
         const result = archiveFiles.shift();

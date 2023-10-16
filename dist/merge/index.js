@@ -78822,8 +78822,8 @@ class CLIArchiveCommand {
             let command = `${this.toolsCommand} archive`;
             if ((0, action_utils_1.verbose)())
                 command += ' --verbose';
-            if (options.index === false)
-                command += ' --no-index';
+            if (options.analyze === false)
+                command += ' --no-analyze';
             if (options.revision)
                 command += ` --revision ${options.revision}`;
             if (options.threadCount)
@@ -79048,16 +79048,24 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.listArchiveFiles = void 0;
 const glob_1 = __nccwpck_require__(5029);
 const path_1 = __nccwpck_require__(1017);
 const action_utils_1 = __nccwpck_require__(1259);
 const promises_1 = __nccwpck_require__(3292);
-function locateArchiveFile(workDir) {
+function listArchiveFiles(workDir) {
     return __awaiter(this, void 0, void 0, function* () {
         const archiveFiles = yield (0, glob_1.glob)((0, path_1.join)(workDir, '.appmap', 'archive', '**', '*.tar'), { dot: true });
         const archiveFileTimes = new Map();
         yield Promise.all(archiveFiles.map((file) => __awaiter(this, void 0, void 0, function* () { return archiveFileTimes.set(file, (yield (0, promises_1.stat)(file)).mtimeMs); })));
         archiveFiles.sort((a, b) => archiveFileTimes.get(b) - archiveFileTimes.get(a));
+        return archiveFiles;
+    });
+}
+exports.listArchiveFiles = listArchiveFiles;
+function locateArchiveFile(workDir) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const archiveFiles = yield listArchiveFiles(workDir);
         if (archiveFiles.length === 0)
             throw new Error(`No AppMap archives found in ${(0, path_1.join)(process.cwd(), workDir)}`);
         const result = archiveFiles.shift();
@@ -79123,7 +79131,7 @@ const path_1 = __nccwpck_require__(1017);
 const fs_1 = __nccwpck_require__(7147);
 const argparse_1 = __nccwpck_require__(1515);
 const action_utils_1 = __nccwpck_require__(1259);
-const locateArchiveFile_1 = __importDefault(__nccwpck_require__(5176));
+const locateArchiveFile_1 = __importStar(__nccwpck_require__(5176));
 const ArchiveAction_1 = __importDefault(__nccwpck_require__(6335));
 const CLIArchiveCommand_1 = __importDefault(__nccwpck_require__(8634));
 const LocalArtifactStore_1 = __importDefault(__nccwpck_require__(3656));
@@ -79150,6 +79158,7 @@ class Merge extends ArchiveAction_1.default {
                 yield this.cacheStore.restore([archiveFile], key);
                 (0, assert_1.default)((0, fs_1.existsSync)(archiveFile), `Archive file ${archiveFile} was not restored from the cache`);
                 yield this.unpackArchive(worker.toString());
+                yield (0, promises_1.rm)(archiveFile);
             }
             const workDirs = (yield (0, glob_1.glob)('.appmap/work/*')).filter(dir => {
                 const dirName = (0, path_1.basename)(dir);
@@ -79186,13 +79195,17 @@ class Merge extends ArchiveAction_1.default {
                     yield (0, promises_1.cp)(file, (0, path_1.join)(appmapDir, (0, path_1.basename)(file)), { recursive: true });
                 }
             }
-            // TODO: Each archive directory already contains an openapi.yml file, so it would be
-            // quite possible, and much more efficient, to merge those files instead of generating
-            // a new one from scratch.
+            // TODO: This can be removed since it's performed by the archive command
             (0, action_utils_1.log)(action_utils_1.LogLevel.Info, 'Generating OpenAPI definitions');
             yield this.archiveCommand.generateOpenAPI();
+            // Check that there are no existing archive files, for unambiguous upload
+            {
+                const archiveFiles = yield (0, locateArchiveFile_1.listArchiveFiles)('.');
+                if (archiveFiles.length > 0)
+                    (0, action_utils_1.log)(action_utils_1.LogLevel.Warn, `Multiple AppMap archives found in ${(0, path_1.join)(process.cwd())}`);
+            }
             (0, action_utils_1.log)(action_utils_1.LogLevel.Info, 'Building merged archive');
-            const archiveOptions = { index: false };
+            const archiveOptions = { analyze: false };
             if (this.revision)
                 archiveOptions.revision = this.revision;
             yield this.archiveCommand.archive(archiveOptions);
