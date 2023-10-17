@@ -24,7 +24,7 @@ export default class CLIArchiveCommand implements ArchiveCommand {
     await executeCommand(command);
   }
 
-  async generateInventoryReport(revision: string): Promise<void> {
+  async generateConfigurationReport(revision: string): Promise<void> {
     const directory = join(INVENTORY_DIR);
     await mkdir(directory, {recursive: true});
 
