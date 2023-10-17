@@ -8,6 +8,7 @@ import {verbose, executeCommand} from '@appland/action-utils';
 import {MockArtifactStore} from './MockArtifactStore';
 import {NoCacheStore} from './NoCacheStore';
 import {MockArchiveCommand} from './MockArchiveCommand';
+import MockConfigurationReporter from './MockConfigurationReporter';
 
 if (process.env.VERBOSE) verbose(true);
 
@@ -22,6 +23,8 @@ export class ArchiveTestContext {
   artifactStore = new MockArtifactStore();
   noCacheStore = new NoCacheStore();
   archiveCommand = new MockArchiveCommand();
+  configurationReporter = new MockConfigurationReporter();
+
   workDir = makeWorkDir();
   archiveBranch = randomUUID();
   currentBranch?: string;

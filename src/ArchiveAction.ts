@@ -8,6 +8,8 @@ import ArchiveCommand from './ArchiveCommand';
 import GitHubArtifactStore from './GitHubArtifactStore';
 import GitHubCacheStore from './GitHubCacheStore';
 import CLIArchiveCommand from './CLIArchiveCommand';
+import GitHubConfigurationReporter from './GitHubConfigurationReporter';
+import ConfigurationReporter from './ConfigurationReporter';
 
 export default abstract class ArchiveAction {
   public jobRunId: string | number | undefined = process.env.GITHUB_RUN_ID;
@@ -16,6 +18,8 @@ export default abstract class ArchiveAction {
   public artifactStore: ArtifactStore = new GitHubArtifactStore();
   public cacheStore: CacheStore = new GitHubCacheStore();
   public archiveCommand: ArchiveCommand = new CLIArchiveCommand();
+  public configurationReporter: ConfigurationReporter = new GitHubConfigurationReporter();
+
   public githubToken?: string;
   public revision?: string;
 
@@ -40,20 +44,5 @@ export default abstract class ArchiveAction {
     }
 
     action.githubToken = core.getInput('github-token');
-  }
-
-  protected async uploadArtifact(archiveFile: string): Promise<{archiveFile: string}> {
-    log(LogLevel.Debug, `Processing AppMap archive ${archiveFile}`);
-
-    // e.g. .appmap/archive/full
-    const dir = dirname(archiveFile);
-    // e.g. appmap-archive-full
-    const artifactPrefix = dir.replace(/\//g, '-').replace(/\./g, '');
-    const [sha] = basename(archiveFile).split('.');
-    const artifactName = `${artifactPrefix}_${sha}.tar`;
-
-    await this.artifactStore.uploadArtifact(artifactName, archiveFile);
-
-    return {archiveFile};
   }
 }

@@ -1,5 +1,4 @@
 import * as core from '@actions/core';
-import {Octokit} from '@octokit/rest';
 import {ArgumentParser} from 'argparse';
 import {ActionLogger, Commenter, log, LogLevel, setLogger, verbose} from '@appland/action-utils';
 import assert from 'assert';
@@ -11,7 +10,7 @@ import {ArchiveOptions} from './ArchiveCommand';
 import CLIArchiveCommand from './CLIArchiveCommand';
 import LocalArtifactStore from './LocalArtifactStore';
 import LocalCacheStore from './LocalCacheStore';
-import {getOctokit} from '@actions/github';
+import {uploadArtifact} from './ArtifactStore';
 
 export class Archive extends ArchiveAction {
   public archiveId?: string | number;
@@ -29,44 +28,37 @@ export class Archive extends ArchiveAction {
     if (this.threadCount) archiveOptions.threadCount = this.threadCount;
 
     log(LogLevel.Info, `Archiving AppMaps with options ${JSON.stringify(archiveOptions)}}`);
-
     await this.archiveCommand.archive(archiveOptions);
     const archiveFile = await locateArchiveFile('.');
 
-    const inventoryRevision = revision || 'HEAD';
-    const inventoryDataFile = `.appmap/inventory/${inventoryRevision}.json`;
-    const inventoryReportFile = `.appmap/inventory/${inventoryRevision}.md`;
-    {
-      log(LogLevel.Info, `Generating inventory file ${inventoryReportFile}`);
-      await this.archiveCommand.generateInventoryReport(inventoryRevision);
-      log(LogLevel.Info, `Uploading inventory data ${inventoryDataFile}`);
-      await this.uploadArtifact(inventoryDataFile);
-    }
-
-    if (Commenter.hasIssueNumber) {
-      if (this.githubToken) {
-        const octokit = getOctokit(this.githubToken) as unknown as Octokit;
-        const commenter = new Commenter(octokit, 'appmap-inventory', inventoryReportFile);
-        await commenter.comment();
-      } else {
-        log(LogLevel.Warn, 'GITHUB_TOKEN is not set, skipping PR comment');
+    // Do not report configuration on a worker node of a matrix build. Configuration report will be performed by the merge action.
+    if (!this.archiveId) {
+      log(LogLevel.Info, 'Optionally sending configuration report');
+      if (await this.configurationReporter.shouldReportConfiguration(this.revision)) {
+        assert(this.revision);
+        await this.configurationReporter.report(
+          this.revision,
+          this.archiveCommand,
+          this.artifactStore,
+          this.githubToken
+        );
       }
     } else {
-      log(
-        LogLevel.Info,
-        'The job is not associated with a pull request or issue number, skipping PR comment'
-      );
+      log(LogLevel.Info, 'Skipping configuration report because archive-id is defined');
     }
 
+    // On a worker node of a matrix build, save the archive to the build cache.
+    // Otherwise, save it as an artifact.
+    log(LogLevel.Info, 'Saving archive');
     if (this.archiveId) {
       assert(this.jobRunId, 'run number (GITHUB_RUN_ID) is not set');
       assert(this.jobAttemptId, 'attempt number (GITHUB_RUN_ATTEMPT) is not set');
       const key = ArchiveAction.cacheKey(this.jobRunId, this.jobAttemptId, this.archiveId);
-      log(LogLevel.Info, `Caching AppMap archive ${archiveFile} as ${key}`);
+      log(LogLevel.Info, `Caching archive ${archiveFile} as ${key}`);
       await this.cacheStore.save([archiveFile], key);
     } else {
       log(LogLevel.Info, `Uploading archive ${archiveFile}`);
-      await this.uploadArtifact(archiveFile);
+      await uploadArtifact(archiveFile, this.artifactStore);
     }
 
     return {archiveFile};

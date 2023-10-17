@@ -1,7 +1,6 @@
 import * as core from '@actions/core';
 import * as log from '@appland/action-utils';
 import {Archive, runInGitHub} from '../src/archive';
-import {before} from 'node:test';
 
 describe('archive.runInGitHub', () => {
   let inputs: Record<string, string> = {};

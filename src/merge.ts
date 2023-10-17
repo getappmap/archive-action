@@ -5,7 +5,7 @@ import {glob} from 'glob';
 import {basename, join} from 'path';
 import {existsSync} from 'fs';
 import {ArgumentParser} from 'argparse';
-import {ActionLogger, log, LogLevel, setLogger, verbose} from '@appland/action-utils';
+import {ActionLogger, Commenter, log, LogLevel, setLogger, verbose} from '@appland/action-utils';
 
 import locateArchiveFile, {listArchiveFiles} from './locateArchiveFile';
 import ArchiveAction from './ArchiveAction';
@@ -14,6 +14,7 @@ import {ArchiveOptions, RestoreOptions} from './ArchiveCommand';
 import CLIArchiveCommand from './CLIArchiveCommand';
 import LocalArtifactStore from './LocalArtifactStore';
 import LocalCacheStore from './LocalCacheStore';
+import {uploadArtifact} from './ArtifactStore';
 
 export class Merge extends ArchiveAction {
   constructor(public archiveCount: number) {
@@ -102,9 +103,20 @@ export class Merge extends ArchiveAction {
     if (this.revision) archiveOptions.revision = this.revision;
     await this.archiveCommand.archive(archiveOptions);
 
-    const archiveFile = await locateArchiveFile('.');
+    log(LogLevel.Info, 'Optionally sending configuration report');
+    if (await this.configurationReporter.shouldReportConfiguration(this.revision)) {
+      assert(this.revision);
+      await this.configurationReporter.report(
+        this.revision,
+        this.archiveCommand,
+        this.artifactStore,
+        this.githubToken
+      );
+    }
 
-    return await this.uploadArtifact(archiveFile);
+    log(LogLevel.Info, 'Saving archive');
+    const archiveFile = await locateArchiveFile('.');
+    return await uploadArtifact(archiveFile, this.artifactStore);
   }
 
   async unpackArchive(archiveId: string) {

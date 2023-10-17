@@ -15,6 +15,11 @@ inputs:
     description: |
       Revision (commit SHA) to name the AppMap archive with. The default is the GITHUB_SHA.
       Under normal circumstances, the default value is correct and this input does not need to be specified.
+  github-token:
+    description: |
+      The GitHub token to use with the GitHub API to pull AppMap archives from build artifacts.
+      Most commonly, you'll use `secrets.GITHUB_TOKEN`, which is automatically provided by GitHub.
+    default: ${{ github.token }}
   verbose:
     description: Enable verbose logging.
 runs:
