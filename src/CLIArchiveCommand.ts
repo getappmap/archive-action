@@ -10,7 +10,7 @@ export default class CLIArchiveCommand implements ArchiveCommand {
   async archive(options: ArchiveOptions): Promise<void> {
     let command = `${this.toolsCommand} archive`;
     if (verbose()) command += ' --verbose';
-    if (options.index === false) command += ' --no-index';
+    if (options.analyze === false) command += ' --no-analyze';
     if (options.revision) command += ` --revision ${options.revision}`;
     if (options.threadCount) command += ` --thread-count ${options.threadCount}`;
     await executeCommand(command, {printStderr: true, printStdout: true});

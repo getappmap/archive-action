@@ -23,11 +23,6 @@ export class Archive extends ArchiveAction {
     log(LogLevel.Debug, `jobAttemptId: ${this.jobAttemptId}`);
     log(LogLevel.Debug, `archiveId: ${this.archiveId}`);
 
-    if (this.archiveId && this.revision) {
-      log(LogLevel.Warn, `Ignoring revision option ${this.revision} because archiveId is set`);
-      this.revision = undefined;
-    }
-
     const archiveOptions: ArchiveOptions = {};
     const revision = this.archiveId ? this.archiveId.toString() : this.revision;
     if (revision) archiveOptions.revision = revision;
@@ -78,26 +73,28 @@ export class Archive extends ArchiveAction {
   }
 }
 
-async function runInGitHub() {
+export async function runInGitHub(action: Archive) {
   verbose(core.getInput('verbose'));
   setLogger(new ActionLogger());
 
   const archiveId = core.getInput('archive-id');
-  const directory = core.getInput('directory');
+  const revision = core.getInput('revision');
 
-  if (directory) {
-    log(LogLevel.Info, `Changing working directory: ${directory}`);
-    process.chdir(directory);
+  ArchiveAction.applyGitHubActionInputs(action);
+
+  if (archiveId) {
+    if (revision)
+      log(LogLevel.Warn, `Ignoring revision option '${revision}' because archive-id is set`);
+
+    action.archiveId = archiveId;
+  } else {
+    action.revision = revision || process.env.GITHUB_SHA;
   }
-
-  const action = new Archive();
-  ArchiveAction.prepareAction(action);
-  if (archiveId) action.archiveId = archiveId;
 
   await action.archive();
 }
 
-async function runLocally() {
+async function runLocally(action: Archive) {
   const parser = new ArgumentParser({
     description: 'Create and store an AppMap archive',
   });
@@ -122,7 +119,6 @@ async function runLocally() {
 
   if (directory) process.chdir(directory);
 
-  const action = new Archive();
   if (appmapCommand) {
     const archiveCommand = new CLIArchiveCommand();
     archiveCommand.toolsCommand = appmapCommand;
@@ -138,6 +134,7 @@ async function runLocally() {
 }
 
 if (require.main === module) {
-  if (process.env.CI) runInGitHub();
-  else runLocally();
+  const action = new Archive();
+  if (process.env.CI) runInGitHub(action);
+  else runLocally(action);
 }

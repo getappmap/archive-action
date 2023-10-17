@@ -1,13 +1,13 @@
 import * as core from '@actions/core';
 import assert from 'assert';
-import {cp, mkdir, readFile, stat} from 'fs/promises';
+import {cp, mkdir, readFile, rm, stat} from 'fs/promises';
 import {glob} from 'glob';
 import {basename, join} from 'path';
 import {existsSync} from 'fs';
 import {ArgumentParser} from 'argparse';
 import {ActionLogger, log, LogLevel, setLogger, verbose} from '@appland/action-utils';
 
-import locateArchiveFile from './locateArchiveFile';
+import locateArchiveFile, {listArchiveFiles} from './locateArchiveFile';
 import ArchiveAction from './ArchiveAction';
 import ArchiveResults from './ArchiveResults';
 import {ArchiveOptions, RestoreOptions} from './ArchiveCommand';
@@ -41,6 +41,7 @@ export class Merge extends ArchiveAction {
         `Archive file ${archiveFile} was not restored from the cache`
       );
       await this.unpackArchive(worker.toString());
+      await rm(archiveFile);
     }
 
     const workDirs = (await glob('.appmap/work/*')).filter(dir => {
@@ -89,14 +90,15 @@ export class Merge extends ArchiveAction {
       }
     }
 
-    // TODO: Each archive directory already contains an openapi.yml file, so it would be
-    // quite possible, and much more efficient, to merge those files instead of generating
-    // a new one from scratch.
-    log(LogLevel.Info, 'Generating OpenAPI definitions');
-    await this.archiveCommand.generateOpenAPI();
+    // Check that there are no existing archive files, for unambiguous upload
+    {
+      const archiveFiles = await listArchiveFiles('.');
+      if (archiveFiles.length > 0)
+        log(LogLevel.Warn, `Multiple AppMap archives found in ${join(process.cwd())}`);
+    }
 
     log(LogLevel.Info, 'Building merged archive');
-    const archiveOptions: ArchiveOptions = {index: false};
+    const archiveOptions: ArchiveOptions = {analyze: false};
     if (this.revision) archiveOptions.revision = this.revision;
     await this.archiveCommand.archive(archiveOptions);
 
@@ -119,17 +121,15 @@ async function runInGitHub() {
   verbose(core.getInput('verbose'));
   setLogger(new ActionLogger());
 
-  const directory = core.getInput('directory');
   const archiveCount = core.getInput('archive-count');
   assert(archiveCount, 'archive-count is not set');
-
-  if (directory) {
-    log(LogLevel.Info, `Changing working directory: ${directory}`);
-    process.chdir(directory);
-  }
+  const revision = core.getInput('revision') || process.env.GITHUB_SHA;
 
   const action = new Merge(parseInt(archiveCount, 10));
-  ArchiveAction.prepareAction(action);
+  ArchiveAction.applyGitHubActionInputs(action);
+
+  if (revision) action.revision = revision;
+
   await action.merge();
 }
 
