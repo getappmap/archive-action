@@ -10,7 +10,6 @@ GitHub action to build and store an AppMap archive.
 
 - [Prerequisites](#prerequisites)
 - [Inputs](#inputs)
-- [Outputs](#outputs)
 - [Examples](#examples)
 - [Development](#development)
 
@@ -22,13 +21,47 @@ For more information about how to setup AppMap in your project [review the offic
 
 ## Inputs
 
-## Outputs
+Add a step like this to your workflow:
 
-The action provides these outputs:
+```yaml
+- name: Archive AppMaps
+  uses: getappmap/archive-action@v1
+  with:
+    # Command working directory. Change this if your project lives in a 
+    # subdirectory or for monorepo / multi-project support
+    # Default: '.'
+    directory: /path/to/code
 
-- `patch`: Patch file of changes made by the installer.
-- `appmap-dir`: Directory containing recorded AppMaps; this information can also be obtained from the appmap_dir entry in the `appmap.yml` configuration file.
+    # 0-based numerical id of a matrix job. This id is used to store the AppMap 
+    # archive in the action cache. Once the matrix jobs complete, the `merge` 
+    # action can be used to merge the archives into a single archive, and then 
+    # save it as an artifact. If `archive-id` is set, the archive is saved to the 
+    # cache. Otherwise, it's uploaded to the artifact store. For a non-matrix 
+    # job, `archive-id` should not be used.
+    # Required for Multi-runner matrix builds.
+    archive-id: ${{ matrix.ci_node_index }}
 
+    # Revision (commit SHA) to name the AppMap archive with. The default is the 
+    # GITHUB_SHA. Under normal circumstances, the default value is correct 
+    # and this input does not need to be specified.
+    revision: 6056b0cfbacd562f4a4f274122c4a5e85542e040
+      
+    # The GitHub token to use with the GitHub API to enumerate AppMap Tools 
+    # releases.
+    # Default: `${{ github.token }}`
+    github-token: secrets.CUSTOM_GITHUB_TOKEN
+    
+    # Number of worker threads to use for processing the archive. Defaults to the 
+    # number of CPUs / cores, as reported by Node.js. If the worker machine has 
+    # a high number of CPUs/cores, the archive action may become I/O-bound rather 
+    # than CPU-bound, and better performance might be obtained by setting this 
+    # value to a lower number.
+    thread-count: 4
+        
+    # Enable verbose logging.
+    # Default: false
+    verbose: true
+```
 
 ## Examples
 
