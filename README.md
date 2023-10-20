@@ -1,4 +1,4 @@
-# getappmap/archive-appmap <!-- omit in toc -->
+# getappmap/archive-appmap
 
 > To get started with AppMap in GitHub actions, you need to start by installing the [AppMap App on the official GitHub Marketplace](https://github.com/marketplace/get-appmap)
 
@@ -6,7 +6,7 @@
 
 GitHub action to build and store an AppMap archive.
 
-## Table of contents <!-- omit in toc -->
+## Table of contents
 
 - [Prerequisites](#prerequisites)
 - [Inputs](#inputs)
