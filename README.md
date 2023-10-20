@@ -1,15 +1,68 @@
-# getappmap/archive-appmap
+# getappmap/archive-appmap <!-- omit in toc -->
+
+> To get started with AppMap in GitHub actions, you need to start by installing the [AppMap App on the official GitHub Marketplace](https://github.com/marketplace/get-appmap)
+
+> To see a step-by-step example of how to install this action into your software project, [review the official AppMap Documentation](http://appmap.io/docs/analysis/in-github-actions).
 
 GitHub action to build and store an AppMap archive.
 
-To see a step-by-step example of how to install this action into your software project, [review the official AppMap Documentation](http://appmap.io/docs/analysis/in-github-actions).
+## Table of contents <!-- omit in toc -->
 
-In non-matrix builds, this action should be run
-run when code is merged to the main branch. The archive is saved to the GitHub artifact store.
-In matrix builds, this action should be run for each matrix job. The archive is saved to 
-the action cached, and then in a subsequent job, the archives are merged into a single archive
-using the `merge` action.
-  
+- [Prerequisites](#prerequisites)
+- [Inputs](#inputs)
+- [Outputs](#outputs)
+- [Examples](#examples)
+- [Development](#development)
+
+## Prerequisites
+
+The `archive-action` needs to run AFTER your test cases have executed to build and save an AppMap archive to the GitHub build asset repository. Your application will need AppMap libraries and configuration files created in the project, or you will need to use the [`install-action`](https://github.com/getappmap/install-action) to setup AppMap before your test cases run. 
+
+For more information about how to setup AppMap in your project [review the official AppMap Documentation](http://appmap.io/docs/analysis/in-github-actions).
+
+## Inputs
+
+## Outputs
+
+The action provides these outputs:
+
+- `patch`: Patch file of changes made by the installer.
+- `appmap-dir`: Directory containing recorded AppMaps; this information can also be obtained from the appmap_dir entry in the `appmap.yml` configuration file.
+
+
+## Examples
+
+Use the `revision` option to set the SHA that will be used for building the archive.  For example, this is used during installation to set a specific base SHA. 
+
+```yaml
+- name: Archive AppMaps
+  uses: getappmap/archive-action@v1
+  with:
+    revision: ${{ github.event.pull_request.base.sha }}
+```
+
+Use the `archive-id` when building a multi-runner matrix build. Set the `archive-id` equal to the unique index ID of the runner which executed the build.  For example, if you have split your runners with the following strategy.
+
+```yaml
+strategy:
+  fail-fast: false
+  matrix:
+    ci_node_total: [2]
+    ci_node_index: [0, 1]
+```
+
+You can us the `matrix.ci_node_index` variable to set either `0` or `1` as the unique node index ID for the `archive-id`
+
+```yaml
+- name: Archive AppMaps
+  if: always()
+  uses: getappmap/archive-action@v1
+  with:
+    archive-id: ${{ matrix.ci_node_index }} # Set this equal to the unique index of the runner
+```
+
+For more examples, refer to the [AppMap example projects](https://appmap.io/docs/setup-appmap-in-ci/example-projects.html)
+
 ## Development
 
 ```
