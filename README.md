@@ -68,23 +68,21 @@ Add a step like this to your workflow:
 
 ## Examples
 
-This example will run on any branch build that is not a Pull Request. 
-```yaml
-- name: Archive AppMaps
-  if: github.event_name != 'pull_request'
-  uses: getappmap/archive-action@v1
-  with:
-    directory: tmp/appmap
-```
+### Initial Setup
 
-Use the `revision` option to set the SHA that will be used for building the archive.  **For example, this is used during installation to set a specific base SHA. **
-
+This example is used during installation to build an AppMap archive based on the base SHA of the setup Pull Request
 ```yaml
 - name: Archive AppMaps
   uses: getappmap/archive-action@v1
   with:
     revision: ${{ github.event.pull_request.base.sha }}
 ```
+
+### Code Review with a Pull Request Trigger in a Matrix Build
+
+This example is used in a matrix build to archive AppMaps and later merge the maps for analysis.
+
+To learn more about how to setup a multi-build matrix runner with AppMap refer to the [AppMap Documentation](https://appmap.io/docs/setup-appmap-in-ci/matrix-builds.html)
 
 Use the `archive-id` when building a multi-runner matrix build. Set the `archive-id` equal to the unique index ID of the runner which executed the build.  For example, if you have split your runners with the following strategy.
 
@@ -101,16 +99,21 @@ You can us the `matrix.ci_node_index` variable to set either `0` or `1` as the u
 **NOTE:** The `if: always()` is used to ensure that the AppMap Archive is generated even if there are failed test cases. The failed test cases will be included in the AppMap analysis report.
 
 ```yaml
-- name: Merge AppMaps
-  uses: getappmap/archive-action/merge@v1
-  with:
-    revision: ${{ github.event.pull_request.head.sha }}
-    archive-count: 2 # Set this equal to the TOTAL number of runners in your workflow
 - name: Archive AppMaps
   if: always()
   uses: getappmap/archive-action@v1
   with:
     archive-id: ${{ matrix.ci_node_index }} # Set this equal to the unique index of the runner
+```
+
+In a build job after all multi-runners have completed, use this to merge and archive the individual runners maps. This `getappmap/archive-action/merge@v1` action will both merge and archive the AppMaps.
+
+```yaml
+- name: Merge AppMaps
+  uses: getappmap/archive-action/merge@v1
+  with:
+    revision: ${{ github.event.pull_request.base.sha }}
+    archive-count: 2 # Set this equal to the total number of test runners (i.e. total archives created)
 ```
 
 For more examples, refer to the [AppMap example projects](https://appmap.io/docs/setup-appmap-in-ci/example-projects.html)
