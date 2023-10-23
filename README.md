@@ -94,9 +94,9 @@ strategy:
     ci_node_index: [0, 1]
 ```
 
-You can us the `matrix.ci_node_index` variable to set either `0` or `1` as the unique node index ID for the `archive-id`.  Additionally, you will use the `archive-action/merge` action to merge AppMaps before archiving them.
+In this example, you will use the `matrix.ci_node_index` variable to set either `0` or `1` as the unique node index ID for the `archive-id`.  
 
-**NOTE:** The `if: always()` is used to ensure that the AppMap Archive is generated even if there are failed test cases. The failed test cases will be included in the AppMap analysis report.
+**NOTE:** The `if: always()` is used to ensure that the AppMap Archive is generated even if there are failed test cases. The failed test cases will be included in the AppMap analysis report.  Since the `archive-id` is being passed to the action, the `archive-action` will save the AppMaps from this runner to the GitHub build cache. After this step you will use the `archive-action/merge` action to merge and archive AppMaps as a build asset. 
 
 ```yaml
 - name: Archive AppMaps
