@@ -1,10 +1,10 @@
 import {cp, mkdir, rm, writeFile} from 'fs/promises';
 import {join} from 'path';
-
-import locateArchiveFile from '../src/locateArchiveFile';
-import * as test from './helper';
-import {waitFor} from '@appland/action-utils';
 import {existsSync} from 'fs';
+import {waitFor} from '@appland/action-utils';
+
+import locateArchiveFile from '../../src/locateArchiveFile';
+import * as test from './helper';
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 

@@ -2,7 +2,6 @@ import * as core from '@actions/core';
 import {ArgumentParser} from 'argparse';
 import {
   ActionLogger,
-  Commenter,
   DirectoryArtifactStore,
   log,
   LogLevel,

@@ -13,10 +13,10 @@ import MockConfigurationReporter from './MockConfigurationReporter';
 if (process.env.VERBOSE) verbose(true);
 
 export const Cwd = process.cwd();
-export const FixtureDir = join(__dirname, 'fixture');
+export const FixtureDir = join(__dirname, '..', 'fixture');
 
 export function makeWorkDir(): string {
-  return mkdtempSync(join(__dirname, 'work', 'archive-appmap-action-'));
+  return mkdtempSync(join(__dirname, '..', 'work', 'archive-appmap-action-'));
 }
 
 export class ArchiveTestContext {

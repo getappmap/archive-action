@@ -1,4 +1,4 @@
-import AppMapCommand, {ArchiveOptions, RestoreOptions} from '../src/AppMapCommand';
+import AppMapCommand, {ArchiveOptions, RestoreOptions} from '../../src/AppMapCommand';
 
 export class MockAppMapCommand implements AppMapCommand {
   public commands: {command: string; options: any}[] = [];

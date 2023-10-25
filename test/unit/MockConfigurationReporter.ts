@@ -1,6 +1,6 @@
 import {ArtifactStore} from '@appland/action-utils';
-import AppMapCommand from '../src/AppMapCommand';
-import ConfigurationReporter from '../src/ConfigurationReporter';
+import AppMapCommand from '../../src/AppMapCommand';
+import ConfigurationReporter from '../../src/ConfigurationReporter';
 
 type Report = {
   revision: string;

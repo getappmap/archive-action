@@ -5,10 +5,11 @@ import {rm} from 'fs/promises';
 import {executeCommand} from '@appland/action-utils';
 import * as actionUtils from '@appland/action-utils';
 
-import {Merge} from '../src/merge';
+import {Merge} from '../../src/merge';
+import * as locateArchiveFile from '../../src/locateArchiveFile';
+import {RestoreOptions} from '../../src/AppMapCommand';
+
 import * as test from './helper';
-import * as locateArchiveFile from '../src/locateArchiveFile';
-import {RestoreOptions} from '../src/AppMapCommand';
 
 describe('merge', () => {
   let logMessages: Record<string, string[]> = {};

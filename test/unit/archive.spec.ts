@@ -2,10 +2,10 @@ import assert from 'assert';
 import * as actionUtils from '@appland/action-utils';
 import {executeCommand} from '@appland/action-utils';
 
-import {Archive} from '../src/archive';
-import * as locateArchiveFile from '../src/locateArchiveFile';
+import {Archive} from '../../src/archive';
+import * as locateArchiveFile from '../../src/locateArchiveFile';
+import CLIAppMapCommand from '../../src/CLIAppMapCommand';
 import * as test from './helper';
-import CLIAppMapCommand from '../src/CLIAppMapCommand';
 
 describe('archive', () => {
   let context: test.ArchiveTestContext;

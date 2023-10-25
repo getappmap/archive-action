@@ -1,9 +1,9 @@
-import GitHubConfigurationReporter from '../src/GitHubConfigurationReporter';
-import * as gitHubContext from '../src/gitHubContext';
 import * as actionUtils from '@appland/action-utils';
 
-import * as test from './helper';
+import GitHubConfigurationReporter from '../../src/GitHubConfigurationReporter';
+import * as gitHubContext from '../../src/gitHubContext';
 import MockCommenter from './MockCommenter';
+import * as test from './helper';
 
 describe('ConfigurationReporter', () => {
   let context: test.ArchiveTestContext;
