@@ -14,11 +14,13 @@ describe('ConfigurationReporter', () => {
 
   beforeEach(async () => {
     context = new test.ArchiveTestContext();
+    await context.setup();
+
     commenter = new MockCommenter();
     reporter = new GitHubConfigurationReporter();
     reporter.commenter = commenter;
   });
-  afterEach(() => jest.restoreAllMocks());
+  afterEach(async () => (context ? await context.teardown() : undefined));
 
   describe('with issue number available', () => {
     beforeEach(() => {

@@ -14,6 +14,7 @@ describe('archive', () => {
   beforeEach(async () => {
     context = new test.ArchiveTestContext();
     await context.setup();
+
     action = new Archive();
     action.artifactStore = context.artifactStore;
     action.cacheStore = context.noCacheStore;
@@ -23,10 +24,7 @@ describe('archive', () => {
     action.jobRunId = 1;
   });
 
-  afterEach(async () => {
-    assert(context);
-    await context.teardown();
-  });
+  afterEach(async () => (context ? await context.teardown() : undefined));
 
   describe('with revision', () => {
     beforeEach(() => (action.revision = '402dec8'));

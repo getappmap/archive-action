@@ -20,6 +20,7 @@ describe('merge', () => {
   beforeEach(async () => {
     context = new test.ArchiveTestContext();
     await context.setup();
+    
     action = new Merge(archiveCount);
     action.revision = '402dec8';
     action.artifactStore = context.artifactStore;
@@ -34,11 +35,7 @@ describe('merge', () => {
     await mkdir(join('tmp/appmap'), {recursive: true});
   });
 
-  afterEach(async () => {
-    assert(context);
-    await context.teardown();
-  });
-  afterEach(() => jest.restoreAllMocks());
+  afterEach(async () => (context ? await context.teardown() : undefined));
 
   describe('with revision', () => {
     beforeEach(() => (action.revision = '402dec8'));

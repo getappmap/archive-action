@@ -8,6 +8,8 @@
     "build": "tsc",
     "watch": "tsc --watch",
     "test": "jest",
+    "test:unit": "jest test/unit",
+    "test:integration": "jest test/integration",
     "appmap": "appmap-agent-js -- jest --no-cache",
     "clean": "rm -rf build dist tmp",
     "format": "prettier --write '**/*.ts'",

@@ -8,11 +8,11 @@ build
 tmp
 
 # Files created when testing this action on itself.
-test/fixture/appmap.yml
+test/unit/fixture/appmap.yml
 patch
 
 # AppMap archive
-test/fixture/.appmap/archive/full/402dec8.tar
+test/unit/fixture/.appmap/archive/full/402dec8.tar
 
 
 # Ignore AppMap archives and working files
