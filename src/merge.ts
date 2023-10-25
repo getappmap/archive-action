@@ -18,8 +18,8 @@ import {
 import locateArchiveFile, {listArchiveFiles} from './locateArchiveFile';
 import ArchiveAction from './ArchiveAction';
 import ArchiveResults from './ArchiveResults';
-import {ArchiveOptions, RestoreOptions} from './ArchiveCommand';
-import CLIArchiveCommand from './CLIArchiveCommand';
+import {ArchiveOptions, RestoreOptions} from './AppMapCommand';
+import CLIAppMapCommand from './CLIAppMapCommand';
 import LocalCacheStore from './LocalCacheStore';
 
 export class Merge extends ArchiveAction {
@@ -107,14 +107,14 @@ export class Merge extends ArchiveAction {
     log(LogLevel.Info, 'Building merged archive');
     const archiveOptions: ArchiveOptions = {analyze: false};
     if (this.revision) archiveOptions.revision = this.revision;
-    await this.archiveCommand.archive(archiveOptions);
+    await this.appMapCommand.archive(archiveOptions);
 
     log(LogLevel.Info, 'Optionally sending configuration report');
     if (await this.configurationReporter.shouldReportConfiguration(this.revision)) {
       assert(this.revision);
       await this.configurationReporter.report(
         this.revision,
-        this.archiveCommand,
+        this.appMapCommand,
         this.artifactStore,
         this.githubToken
       );
@@ -127,7 +127,7 @@ export class Merge extends ArchiveAction {
 
   async unpackArchive(archiveId: string) {
     const options: RestoreOptions = {revision: archiveId, exact: true};
-    await this.archiveCommand.restore(options);
+    await this.appMapCommand.restore(options);
 
     const workDir = join('.appmap/work', archiveId);
     const workDirStats = await stat(workDir);
@@ -183,9 +183,9 @@ async function runLocally() {
   action.jobRunId = jobRunId;
   action.jobAttemptId = jobAttemptId;
   if (appmapCommand) {
-    const archiveCommand = new CLIArchiveCommand();
-    archiveCommand.toolsCommand = appmapCommand;
-    action.archiveCommand = archiveCommand;
+    const appMapCommand = new CLIAppMapCommand();
+    appMapCommand.toolsCommand = appmapCommand;
+    action.appMapCommand = appMapCommand;
   }
   action.artifactStore = new DirectoryArtifactStore(artifactDir);
   action.cacheStore = new LocalCacheStore();

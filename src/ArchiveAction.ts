@@ -2,9 +2,9 @@ import * as core from '@actions/core';
 import {log, LogLevel, ArtifactStore, GitHubArtifactStore} from '@appland/action-utils';
 
 import CacheStore from './CacheStore';
-import ArchiveCommand from './ArchiveCommand';
+import AppMapCommand from './AppMapCommand';
 import GitHubCacheStore from './GitHubCacheStore';
-import CLIArchiveCommand from './CLIArchiveCommand';
+import CLIAppMapCommand from './CLIAppMapCommand';
 import GitHubConfigurationReporter from './GitHubConfigurationReporter';
 import ConfigurationReporter from './ConfigurationReporter';
 
@@ -14,7 +14,7 @@ export default abstract class ArchiveAction {
 
   public artifactStore: ArtifactStore = new GitHubArtifactStore();
   public cacheStore: CacheStore = new GitHubCacheStore();
-  public archiveCommand: ArchiveCommand = new CLIArchiveCommand();
+  public appMapCommand: AppMapCommand = new CLIAppMapCommand();
   public configurationReporter: ConfigurationReporter = new GitHubConfigurationReporter();
 
   public githubToken?: string;

@@ -8,7 +8,7 @@ import * as actionUtils from '@appland/action-utils';
 import {Merge} from '../src/merge';
 import * as test from './helper';
 import * as locateArchiveFile from '../src/locateArchiveFile';
-import {RestoreOptions} from '../src/ArchiveCommand';
+import {RestoreOptions} from '../src/AppMapCommand';
 
 describe('merge', () => {
   let logMessages: Record<string, string[]> = {};
@@ -23,7 +23,7 @@ describe('merge', () => {
     action.revision = '402dec8';
     action.artifactStore = context.artifactStore;
     action.cacheStore = context.noCacheStore;
-    action.archiveCommand = context.archiveCommand;
+    action.appMapCommand = context.appMapCommand;
     action.configurationReporter = context.configurationReporter;
     action.jobAttemptId = 1;
     action.jobRunId = 1;
@@ -92,7 +92,7 @@ describe('merge', () => {
             await placeTarFile(workerId);
           });
 
-        context.archiveCommand.restore = jest
+        context.appMapCommand.restore = jest
           .fn()
           .mockImplementation(async (options: RestoreOptions) => {
             expect(options.exact).toEqual(true);
@@ -108,7 +108,7 @@ describe('merge', () => {
 
         await action.merge();
 
-        expect(context.archiveCommand.commands).toEqual([
+        expect(context.appMapCommand.commands).toEqual([
           {
             command: 'archive',
             options: {analyze: false, revision: '402dec8'},

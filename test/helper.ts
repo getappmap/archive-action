@@ -7,7 +7,7 @@ import {verbose, executeCommand} from '@appland/action-utils';
 
 import {MockArtifactStore} from './MockArtifactStore';
 import {NoCacheStore} from './NoCacheStore';
-import {MockArchiveCommand} from './MockArchiveCommand';
+import {MockAppMapCommand} from './MockAppMapCommand';
 import MockConfigurationReporter from './MockConfigurationReporter';
 
 if (process.env.VERBOSE) verbose(true);
@@ -22,7 +22,7 @@ export function makeWorkDir(): string {
 export class ArchiveTestContext {
   artifactStore = new MockArtifactStore();
   noCacheStore = new NoCacheStore();
-  archiveCommand = new MockArchiveCommand();
+  appMapCommand = new MockAppMapCommand();
   configurationReporter = new MockConfigurationReporter();
 
   workDir = makeWorkDir();

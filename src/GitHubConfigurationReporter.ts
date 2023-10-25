@@ -1,6 +1,6 @@
 import {Commenter, LogLevel, log, ArtifactStore, uploadArtifact} from '@appland/action-utils';
 
-import ArchiveCommand from './ArchiveCommand';
+import AppMapCommand from './AppMapCommand';
 import {baseSha as computeBaseSha} from './gitHubContext';
 import ConfigurationReporter from './ConfigurationReporter';
 import GitHubCommenter from './GitHubCommenter';
@@ -21,7 +21,7 @@ export default class GitHubConfigurationReporter implements ConfigurationReporte
 
   async report(
     revision: string,
-    archiveCommand: ArchiveCommand,
+    appMapCommand: AppMapCommand,
     artifactStore: ArtifactStore,
     githubToken?: string
   ) {
@@ -29,7 +29,7 @@ export default class GitHubConfigurationReporter implements ConfigurationReporte
     const inventoryReportFile = `.appmap/inventory/${revision}.md`;
     {
       log(LogLevel.Info, `Generating inventory file ${inventoryReportFile}`);
-      await archiveCommand.generateConfigurationReport(revision);
+      await appMapCommand.generateConfigurationReport(revision);
       log(LogLevel.Info, `Uploading inventory data ${inventoryDataFile}`);
       await uploadArtifact(artifactStore, inventoryDataFile);
     }

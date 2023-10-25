@@ -39,14 +39,14 @@ describe('ConfigurationReporter', () => {
 
           await reporter.report(
             revision,
-            context.archiveCommand,
+            context.appMapCommand,
             context.artifactStore,
             'fake-token'
           );
 
           expect(executeCommandSpy).not.toHaveBeenCalled();
 
-          expect(context.archiveCommand.commands).toEqual([
+          expect(context.appMapCommand.commands).toEqual([
             {command: 'inventory', options: {revision: '402dec8'}},
           ]);
 

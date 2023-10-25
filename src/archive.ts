@@ -15,8 +15,8 @@ import assert from 'assert';
 import ArchiveAction from './ArchiveAction';
 import locateArchiveFile from './locateArchiveFile';
 import ArchiveResults from './ArchiveResults';
-import {ArchiveOptions} from './ArchiveCommand';
-import CLIArchiveCommand from './CLIArchiveCommand';
+import {ArchiveOptions} from './AppMapCommand';
+import CLIAppMapCommand from './CLIAppMapCommand';
 import LocalCacheStore from './LocalCacheStore';
 
 export class Archive extends ArchiveAction {
@@ -35,7 +35,7 @@ export class Archive extends ArchiveAction {
     if (this.threadCount) archiveOptions.threadCount = this.threadCount;
 
     log(LogLevel.Info, `Archiving AppMaps with options ${JSON.stringify(archiveOptions)}}`);
-    await this.archiveCommand.archive(archiveOptions);
+    await this.appMapCommand.archive(archiveOptions);
     const archiveFile = await locateArchiveFile('.');
 
     // Do not report configuration on a worker node of a matrix build. Configuration report will be performed by the merge action.
@@ -45,7 +45,7 @@ export class Archive extends ArchiveAction {
         assert(this.revision);
         await this.configurationReporter.report(
           this.revision,
-          this.archiveCommand,
+          this.appMapCommand,
           this.artifactStore,
           this.githubToken
         );
@@ -121,9 +121,9 @@ async function runLocally(action: Archive) {
   if (directory) process.chdir(directory);
 
   if (appmapCommand) {
-    const archiveCommand = new CLIArchiveCommand();
-    archiveCommand.toolsCommand = appmapCommand;
-    action.archiveCommand = archiveCommand;
+    const appMapCommand = new CLIAppMapCommand();
+    appMapCommand.toolsCommand = appmapCommand;
+    action.appMapCommand = appMapCommand;
   }
   action.artifactStore = new DirectoryArtifactStore(artifactDir);
   action.cacheStore = new LocalCacheStore();

@@ -1,6 +1,6 @@
-import ArchiveCommand, {ArchiveOptions, RestoreOptions} from '../src/ArchiveCommand';
+import AppMapCommand, {ArchiveOptions, RestoreOptions} from '../src/AppMapCommand';
 
-export class MockArchiveCommand implements ArchiveCommand {
+export class MockAppMapCommand implements AppMapCommand {
   public commands: {command: string; options: any}[] = [];
 
   async archive(options: ArchiveOptions): Promise<void> {
