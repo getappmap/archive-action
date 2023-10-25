@@ -5,16 +5,22 @@ import {glob} from 'glob';
 import {basename, join} from 'path';
 import {existsSync} from 'fs';
 import {ArgumentParser} from 'argparse';
-import {ActionLogger, Commenter, log, LogLevel, setLogger, verbose} from '@appland/action-utils';
+import {
+  ActionLogger,
+  log,
+  LogLevel,
+  setLogger,
+  verbose,
+  DirectoryArtifactStore,
+  uploadArtifact,
+} from '@appland/action-utils';
 
 import locateArchiveFile, {listArchiveFiles} from './locateArchiveFile';
 import ArchiveAction from './ArchiveAction';
 import ArchiveResults from './ArchiveResults';
 import {ArchiveOptions, RestoreOptions} from './ArchiveCommand';
 import CLIArchiveCommand from './CLIArchiveCommand';
-import LocalArtifactStore from './LocalArtifactStore';
 import LocalCacheStore from './LocalCacheStore';
-import {uploadArtifact} from './ArtifactStore';
 
 export class Merge extends ArchiveAction {
   constructor(public archiveCount: number) {
@@ -116,7 +122,7 @@ export class Merge extends ArchiveAction {
 
     log(LogLevel.Info, 'Saving archive');
     const archiveFile = await locateArchiveFile('.');
-    return await uploadArtifact(archiveFile, this.artifactStore);
+    return await uploadArtifact(this.artifactStore, archiveFile);
   }
 
   async unpackArchive(archiveId: string) {
@@ -151,6 +157,7 @@ async function runLocally() {
   });
   parser.add_argument('-v', '--verbose');
   parser.add_argument('-d', '--directory', {help: 'Program working directory'});
+  parser.add_argument('--artifact-dir', {default: '.appmap/artifacts'});
   parser.add_argument('--appmap-command', {default: 'appmap'});
   parser.add_argument('-r', '--revision', {help: 'Git revision'});
   parser.add_argument('-c', '--archive-count', {required: true});
@@ -161,6 +168,7 @@ async function runLocally() {
   const {
     directory,
     archive_count: archiveCount,
+    artifact_dir: artifactDir,
     revision,
     appmap_command: appmapCommand,
     job_run_id: jobRunId,
@@ -179,7 +187,7 @@ async function runLocally() {
     archiveCommand.toolsCommand = appmapCommand;
     action.archiveCommand = archiveCommand;
   }
-  action.artifactStore = new LocalArtifactStore();
+  action.artifactStore = new DirectoryArtifactStore(artifactDir);
   action.cacheStore = new LocalCacheStore();
   if (revision) action.revision = revision;
   await action.merge();

@@ -1,5 +1,5 @@
+import {ArtifactStore} from '@appland/action-utils';
 import ArchiveCommand from '../src/ArchiveCommand';
-import ArtifactStore from '../src/ArtifactStore';
 import ConfigurationReporter from '../src/ConfigurationReporter';
 
 type Report = {

@@ -1,11 +1,8 @@
 import * as core from '@actions/core';
-import {basename, dirname} from 'path';
-import {log, LogLevel, verbose} from '@appland/action-utils';
+import {log, LogLevel, ArtifactStore, GitHubArtifactStore} from '@appland/action-utils';
 
-import ArtifactStore from './ArtifactStore';
 import CacheStore from './CacheStore';
 import ArchiveCommand from './ArchiveCommand';
-import GitHubArtifactStore from './GitHubArtifactStore';
 import GitHubCacheStore from './GitHubCacheStore';
 import CLIArchiveCommand from './CLIArchiveCommand';
 import GitHubConfigurationReporter from './GitHubConfigurationReporter';

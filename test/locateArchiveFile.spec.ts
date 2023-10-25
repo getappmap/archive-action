@@ -3,6 +3,8 @@ import {join} from 'path';
 
 import locateArchiveFile from '../src/locateArchiveFile';
 import * as test from './helper';
+import {waitFor} from '@appland/action-utils';
+import {existsSync} from 'fs';
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -19,12 +21,15 @@ describe('locateArchiveFile', () => {
   it(`chooses the most recent`, async () => {
     await mkdir(join(workDir, '.appmap/archive/full'), {recursive: true});
     await writeFile(join(workDir, '.appmap/archive/full/1.tar'), '');
-    wait(1);
     await writeFile(join(workDir, '.appmap/archive/full/2.tar'), '');
-    wait(1);
     await writeFile(join(workDir, '.appmap/archive/full/3.tar'), '');
-    wait(1);
 
-    expect(locateArchiveFile(workDir)).resolves.toMatch(/\.appmap\/archive\/full\/3\.tar$/);
+    waitFor(
+      `${join(workDir, '.appmap/archive/full/3.tar')} should exist`,
+      () => existsSync(join(workDir, '.appmap/archive/full/3.tar')),
+      100
+    );
+
+    expect(await locateArchiveFile(workDir)).toMatch(/\.appmap\/archive\/full\/3\.tar$/);
   });
 });

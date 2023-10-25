@@ -1,6 +1,15 @@
 import * as core from '@actions/core';
 import {ArgumentParser} from 'argparse';
-import {ActionLogger, Commenter, log, LogLevel, setLogger, verbose} from '@appland/action-utils';
+import {
+  ActionLogger,
+  Commenter,
+  DirectoryArtifactStore,
+  log,
+  LogLevel,
+  setLogger,
+  uploadArtifact,
+  verbose,
+} from '@appland/action-utils';
 import assert from 'assert';
 
 import ArchiveAction from './ArchiveAction';
@@ -8,9 +17,7 @@ import locateArchiveFile from './locateArchiveFile';
 import ArchiveResults from './ArchiveResults';
 import {ArchiveOptions} from './ArchiveCommand';
 import CLIArchiveCommand from './CLIArchiveCommand';
-import LocalArtifactStore from './LocalArtifactStore';
 import LocalCacheStore from './LocalCacheStore';
-import {uploadArtifact} from './ArtifactStore';
 
 export class Archive extends ArchiveAction {
   public archiveId?: string | number;
@@ -58,7 +65,7 @@ export class Archive extends ArchiveAction {
       await this.cacheStore.save([archiveFile], key);
     } else {
       log(LogLevel.Info, `Uploading archive ${archiveFile}`);
-      await uploadArtifact(archiveFile, this.artifactStore);
+      await uploadArtifact(this.artifactStore, archiveFile);
     }
 
     return {archiveFile};
@@ -92,6 +99,7 @@ async function runLocally(action: Archive) {
   });
   parser.add_argument('-v', '--verbose');
   parser.add_argument('-d', '--directory', {help: 'Program working directory'});
+  parser.add_argument('--artifact-dir', {default: '.appmap/artifacts'});
   parser.add_argument('--appmap-command', {default: 'appmap'});
   parser.add_argument('-r', '--revision', {help: 'Git revision'});
   parser.add_argument('-a', '--archive-id', {
@@ -103,6 +111,7 @@ async function runLocally(action: Archive) {
   const {
     directory,
     revision,
+    artifact_dir: artifactDir,
     appmap_command: appmapCommand,
     archive_id: archiveId,
     thread_count: threadCount,
@@ -116,7 +125,7 @@ async function runLocally(action: Archive) {
     archiveCommand.toolsCommand = appmapCommand;
     action.archiveCommand = archiveCommand;
   }
-  action.artifactStore = new LocalArtifactStore();
+  action.artifactStore = new DirectoryArtifactStore(artifactDir);
   action.cacheStore = new LocalCacheStore();
   if (revision) action.revision = revision;
   if (archiveId) action.archiveId = archiveId;

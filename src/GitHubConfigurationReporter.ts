@@ -1,6 +1,6 @@
-import {Commenter, LogLevel, log} from '@appland/action-utils';
+import {Commenter, LogLevel, log, ArtifactStore, uploadArtifact} from '@appland/action-utils';
+
 import ArchiveCommand from './ArchiveCommand';
-import ArtifactStore, {uploadArtifact} from './ArtifactStore';
 import {baseSha as computeBaseSha} from './gitHubContext';
 import ConfigurationReporter from './ConfigurationReporter';
 import GitHubCommenter from './GitHubCommenter';
@@ -31,7 +31,7 @@ export default class GitHubConfigurationReporter implements ConfigurationReporte
       log(LogLevel.Info, `Generating inventory file ${inventoryReportFile}`);
       await archiveCommand.generateConfigurationReport(revision);
       log(LogLevel.Info, `Uploading inventory data ${inventoryDataFile}`);
-      await uploadArtifact(inventoryDataFile, artifactStore);
+      await uploadArtifact(artifactStore, inventoryDataFile);
     }
 
     if (githubToken) {
@@ -67,8 +67,8 @@ export default class GitHubConfigurationReporter implements ConfigurationReporte
 
   // Public so it can be a testing hook.
   static testIssueNumber(): boolean {
-    const result = Commenter.hasIssueNumber;
-    if (result) log(LogLevel.Debug, `Issue number is ${Commenter.issueNumber}`);
+    const result = Commenter.hasIssueNumber();
+    if (result) log(LogLevel.Debug, `Issue number is ${Commenter.issueNumber()}`);
     else log(LogLevel.Debug, `Issue number is not available`);
     return result;
   }

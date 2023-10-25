@@ -1,5 +1,5 @@
+import { ArtifactStore } from '@appland/action-utils';
 import ArchiveCommand from './ArchiveCommand';
-import ArtifactStore from './ArtifactStore';
 
 export default interface ConfigurationReporter {
   shouldReportConfiguration(revision?: string): Promise<boolean>;
