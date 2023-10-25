@@ -4,7 +4,11 @@
 > 
 > To see a step-by-step example of how to install this action into your software project, [review the official AppMap Documentation](http://appmap.io/docs/analysis/in-github-actions).
 
-GitHub Action used during initial setup to create a Configuration report. Also used in matrix builds to create an archive of AppMaps on a worker node and save them to the GitHub cache. Finally, used when a PR is merged (both in matrix and non-matrix mode) to build and store a baseline artifact. This is also done on a schedule (cron) to ensure that the artifacts don't expire and disappear. Default GitHub artifact expiration is 90 days. This is a configurable GitHub org or project setting.
+`getappmap/archive-action` is a GitHub Action used during initial setup of AppMap in CI to create a Configuration report. It's also used in matrix builds to create an archive of AppMaps on a worker node and save them to the GitHub cache. Finally, it's used when a PR is merged (both in matrix and non-matrix mode) to build and store a baseline artifact. This is also done on a schedule (cron) to ensure that the artifacts don't expire and disappear. 
+
+`getappmap/archive-action/merge` is an action used to merge AppMaps created in a matrix build into one unified archive.
+
+_Note_ Default GitHub artifact expiration is 90 days. This is a configurable GitHub org or project setting.
 
 ## Table of contents
 
@@ -15,9 +19,8 @@ GitHub Action used during initial setup to create a Configuration report. Also u
 
 ## Requirements
 
-The `archive-action` needs to run AFTER your test cases have executed to build and save an AppMap archive to the GitHub build asset repository. Your application will need AppMap libraries and configuration files created in the project, or you will need to use the [`install-action`](https://github.com/getappmap/install-action) to setup AppMap before your test cases run. 
-
-For more information about how to setup AppMap in your project [review the official AppMap Documentation](http://appmap.io/docs/analysis/in-github-actions).
+1. Your project must be configured to run tests with AppMap enabled. [`getappmap/install-action`](https://github.com/getappmap/install-action) is a companion GitHub Action that can be used to do this automatically. For more information about how to setup AppMap in your project [review the official AppMap Documentation](http://appmap.io/docs/analysis/in-github-actions).
+2. `getappmap/archive-action` needs to run AFTER your test cases have executed, so that there will be AppMaps for it to process. 
 
 ## Inputs
 
@@ -68,9 +71,10 @@ Add a step like this to your workflow:
 
 ## Examples
 
-### Initial Setup
+### Initial Setup (`pull_request` workflow trigger)
 
-This example is used during installation to build an AppMap archive based on the base SHA of the setup Pull Request
+This example is used during installation to build an AppMap archive based on the base SHA of the setup Pull Request:
+
 ```yaml
 - name: Archive AppMaps
   uses: getappmap/archive-action@v1
@@ -78,9 +82,9 @@ This example is used during installation to build an AppMap archive based on the
     revision: ${{ github.event.pull_request.base.sha }}
 ```
 
-### Code Review with a Pull Request Trigger in a Matrix Build
+### Matrix Build (`pull_request` workflow trigger)
 
-This example is used in a matrix build to archive AppMaps and later merge the maps for analysis.
+This example shows how to use the archive actions in a matrix build to archive the AppMaps on each worker node, then to combine them together for analysis.
 
 To learn more about how to setup a multi-build matrix runner with AppMap refer to the [AppMap Documentation](https://appmap.io/docs/setup-appmap-in-ci/matrix-builds.html)
 
