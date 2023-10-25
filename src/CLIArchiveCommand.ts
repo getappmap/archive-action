@@ -43,10 +43,4 @@ export default class CLIArchiveCommand implements ArchiveCommand {
       await executeCommand(command);
     }
   }
-
-  async generateOpenAPI(): Promise<void> {
-    let command = `${this.toolsCommand} openapi --output-file openapi.yml`;
-    if (verbose()) command += ' --verbose';
-    await executeCommand(command);
-  }
 }

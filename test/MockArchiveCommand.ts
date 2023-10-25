@@ -14,8 +14,4 @@ export class MockArchiveCommand implements ArchiveCommand {
   async generateConfigurationReport(revision: string): Promise<void> {
     this.commands.push({command: 'inventory', options: {revision}});
   }
-
-  async generateOpenAPI(): Promise<void> {
-    this.commands.push({command: 'openapi', options: {}});
-  }
 }
