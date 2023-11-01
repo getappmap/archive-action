@@ -7,8 +7,9 @@ import {verbose, executeCommand} from '@appland/action-utils';
 
 import {MockArtifactStore} from './MockArtifactStore';
 import {NoCacheStore} from './NoCacheStore';
-import {MockArchiveCommand} from './MockArchiveCommand';
+import {MockAppMapCommand} from './MockAppMapCommand';
 import MockConfigurationReporter from './MockConfigurationReporter';
+import assert from 'assert';
 
 if (process.env.VERBOSE) verbose(true);
 
@@ -22,7 +23,7 @@ export function makeWorkDir(): string {
 export class ArchiveTestContext {
   artifactStore = new MockArtifactStore();
   noCacheStore = new NoCacheStore();
-  archiveCommand = new MockArchiveCommand();
+  appMapCommand = new MockAppMapCommand();
   configurationReporter = new MockConfigurationReporter();
 
   workDir = makeWorkDir();
@@ -30,16 +31,18 @@ export class ArchiveTestContext {
   currentBranch?: string;
 
   async setup(): Promise<void> {
-    await cp(FixtureDir, this.workDir, {recursive: true, force: true});
-    process.chdir(this.workDir);
-
     this.currentBranch = (await executeCommand('git rev-parse --abbrev-ref HEAD')).trim();
     // In a GitHub PR
     if (this.currentBranch === 'HEAD')
       this.currentBranch = (await executeCommand('git rev-parse HEAD')).trim();
 
+    assert(this.currentBranch, `Could not determine current branch`);
+
     await executeCommand(`git checkout -b ${this.archiveBranch}`);
     await executeCommand(`git checkout ${this.currentBranch}`);
+
+    await cp(FixtureDir, this.workDir, {recursive: true, force: true});
+    process.chdir(this.workDir);
   }
 
   async teardown(): Promise<void> {

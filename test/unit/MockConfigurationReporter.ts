@@ -1,6 +1,6 @@
-import ArchiveCommand from '../src/ArchiveCommand';
-import ArtifactStore from '../src/ArtifactStore';
-import ConfigurationReporter from '../src/ConfigurationReporter';
+import {ArtifactStore} from '@appland/action-utils';
+import AppMapCommand from '../../src/AppMapCommand';
+import ConfigurationReporter from '../../src/ConfigurationReporter';
 
 type Report = {
   revision: string;
@@ -18,7 +18,7 @@ export default class MockConfigurationReporter implements ConfigurationReporter 
   // Configuration reports are stored in an array.
   async report(
     revision: string,
-    _archiveCommand: ArchiveCommand,
+    _appMapCommand: AppMapCommand,
     _artifactStore: ArtifactStore,
     githubToken?: string
   ): Promise<void> {

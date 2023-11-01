@@ -1,4 +1,4 @@
-import {ActionCommenter} from '../src/GitHubConfigurationReporter';
+import {ActionCommenter} from '../../src/GitHubConfigurationReporter';
 
 export default class MockCommenter implements ActionCommenter {
   public reportFiles = new Array<string>();

@@ -2,10 +2,10 @@ import assert from 'assert';
 import * as actionUtils from '@appland/action-utils';
 import {executeCommand} from '@appland/action-utils';
 
-import {Archive} from '../src/archive';
-import * as locateArchiveFile from '../src/locateArchiveFile';
+import {Archive} from '../../src/archive';
+import * as locateArchiveFile from '../../src/locateArchiveFile';
+import CLIAppMapCommand from '../../src/CLIAppMapCommand';
 import * as test from './helper';
-import CLIArchiveCommand from '../src/CLIArchiveCommand';
 
 describe('archive', () => {
   let context: test.ArchiveTestContext;
@@ -14,19 +14,17 @@ describe('archive', () => {
   beforeEach(async () => {
     context = new test.ArchiveTestContext();
     await context.setup();
+
     action = new Archive();
     action.artifactStore = context.artifactStore;
     action.cacheStore = context.noCacheStore;
-    action.archiveCommand = context.archiveCommand;
+    action.appMapCommand = context.appMapCommand;
     action.configurationReporter = context.configurationReporter;
     action.jobAttemptId = 1;
     action.jobRunId = 1;
   });
 
-  afterEach(async () => {
-    assert(context);
-    await context.teardown();
-  });
+  afterEach(async () => (context ? await context.teardown() : undefined));
 
   describe('with revision', () => {
     beforeEach(() => (action.revision = '402dec8'));
@@ -39,7 +37,7 @@ describe('archive', () => {
           .spyOn(locateArchiveFile, 'default')
           .mockResolvedValue('.appmap/archive/full/402dec8.tar');
 
-        action.archiveCommand = new CLIArchiveCommand();
+        action.appMapCommand = new CLIAppMapCommand();
         jest.spyOn(actionUtils, 'executeCommand').mockResolvedValue('');
 
         await action.archive();
@@ -80,7 +78,7 @@ describe('archive', () => {
           .spyOn(locateArchiveFile, 'default')
           .mockResolvedValue('.appmap/archive/full/foobar.tar');
 
-        action.archiveCommand = new CLIArchiveCommand();
+        action.appMapCommand = new CLIAppMapCommand();
 
         const executeCommandSpy = jest.spyOn(actionUtils, 'executeCommand');
         executeCommandSpy.mockResolvedValue('');

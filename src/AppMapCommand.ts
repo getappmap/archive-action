@@ -11,12 +11,10 @@ export type RestoreOptions = {
 
 export const INVENTORY_DIR = '.appmap/inventory';
 
-export default interface ArchiveCommand {
+export default interface AppMapCommand {
   archive(options: ArchiveOptions): Promise<void>;
 
   restore(options: RestoreOptions): Promise<void>;
 
   generateConfigurationReport(revision: string): Promise<void>;
-
-  generateOpenAPI(): Promise<void>;
 }

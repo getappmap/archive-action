@@ -1,16 +1,22 @@
 import * as core from '@actions/core';
 import {ArgumentParser} from 'argparse';
-import {ActionLogger, Commenter, log, LogLevel, setLogger, verbose} from '@appland/action-utils';
+import {
+  ActionLogger,
+  DirectoryArtifactStore,
+  log,
+  LogLevel,
+  setLogger,
+  uploadArtifact,
+  verbose,
+} from '@appland/action-utils';
 import assert from 'assert';
 
 import ArchiveAction from './ArchiveAction';
 import locateArchiveFile from './locateArchiveFile';
 import ArchiveResults from './ArchiveResults';
-import {ArchiveOptions} from './ArchiveCommand';
-import CLIArchiveCommand from './CLIArchiveCommand';
-import LocalArtifactStore from './LocalArtifactStore';
+import {ArchiveOptions} from './AppMapCommand';
+import CLIAppMapCommand from './CLIAppMapCommand';
 import LocalCacheStore from './LocalCacheStore';
-import {uploadArtifact} from './ArtifactStore';
 
 export class Archive extends ArchiveAction {
   public archiveId?: string | number;
@@ -28,7 +34,7 @@ export class Archive extends ArchiveAction {
     if (this.threadCount) archiveOptions.threadCount = this.threadCount;
 
     log(LogLevel.Info, `Archiving AppMaps with options ${JSON.stringify(archiveOptions)}}`);
-    await this.archiveCommand.archive(archiveOptions);
+    await this.appMapCommand.archive(archiveOptions);
     const archiveFile = await locateArchiveFile('.');
 
     // Do not report configuration on a worker node of a matrix build. Configuration report will be performed by the merge action.
@@ -38,7 +44,7 @@ export class Archive extends ArchiveAction {
         assert(this.revision);
         await this.configurationReporter.report(
           this.revision,
-          this.archiveCommand,
+          this.appMapCommand,
           this.artifactStore,
           this.githubToken
         );
@@ -58,7 +64,7 @@ export class Archive extends ArchiveAction {
       await this.cacheStore.save([archiveFile], key);
     } else {
       log(LogLevel.Info, `Uploading archive ${archiveFile}`);
-      await uploadArtifact(archiveFile, this.artifactStore);
+      await uploadArtifact(this.artifactStore, archiveFile);
     }
 
     return {archiveFile};
@@ -92,6 +98,7 @@ async function runLocally(action: Archive) {
   });
   parser.add_argument('-v', '--verbose');
   parser.add_argument('-d', '--directory', {help: 'Program working directory'});
+  parser.add_argument('--artifact-dir', {default: '.appmap/artifacts'});
   parser.add_argument('--appmap-command', {default: 'appmap'});
   parser.add_argument('-r', '--revision', {help: 'Git revision'});
   parser.add_argument('-a', '--archive-id', {
@@ -103,6 +110,7 @@ async function runLocally(action: Archive) {
   const {
     directory,
     revision,
+    artifact_dir: artifactDir,
     appmap_command: appmapCommand,
     archive_id: archiveId,
     thread_count: threadCount,
@@ -112,11 +120,11 @@ async function runLocally(action: Archive) {
   if (directory) process.chdir(directory);
 
   if (appmapCommand) {
-    const archiveCommand = new CLIArchiveCommand();
-    archiveCommand.toolsCommand = appmapCommand;
-    action.archiveCommand = archiveCommand;
+    const appMapCommand = new CLIAppMapCommand();
+    appMapCommand.toolsCommand = appmapCommand;
+    action.appMapCommand = appMapCommand;
   }
-  action.artifactStore = new LocalArtifactStore();
+  action.artifactStore = new DirectoryArtifactStore(artifactDir);
   action.cacheStore = new LocalCacheStore();
   if (revision) action.revision = revision;
   if (archiveId) action.archiveId = archiveId;

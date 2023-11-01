@@ -5,10 +5,11 @@ import {rm} from 'fs/promises';
 import {executeCommand} from '@appland/action-utils';
 import * as actionUtils from '@appland/action-utils';
 
-import {Merge} from '../src/merge';
+import {Merge} from '../../src/merge';
+import * as locateArchiveFile from '../../src/locateArchiveFile';
+import {RestoreOptions} from '../../src/AppMapCommand';
+
 import * as test from './helper';
-import * as locateArchiveFile from '../src/locateArchiveFile';
-import {RestoreOptions} from '../src/ArchiveCommand';
 
 describe('merge', () => {
   let logMessages: Record<string, string[]> = {};
@@ -19,11 +20,12 @@ describe('merge', () => {
   beforeEach(async () => {
     context = new test.ArchiveTestContext();
     await context.setup();
+    
     action = new Merge(archiveCount);
     action.revision = '402dec8';
     action.artifactStore = context.artifactStore;
     action.cacheStore = context.noCacheStore;
-    action.archiveCommand = context.archiveCommand;
+    action.appMapCommand = context.appMapCommand;
     action.configurationReporter = context.configurationReporter;
     action.jobAttemptId = 1;
     action.jobRunId = 1;
@@ -33,11 +35,7 @@ describe('merge', () => {
     await mkdir(join('tmp/appmap'), {recursive: true});
   });
 
-  afterEach(async () => {
-    assert(context);
-    await context.teardown();
-  });
-  afterEach(() => jest.restoreAllMocks());
+  afterEach(async () => (context ? await context.teardown() : undefined));
 
   describe('with revision', () => {
     beforeEach(() => (action.revision = '402dec8'));
@@ -92,7 +90,7 @@ describe('merge', () => {
             await placeTarFile(workerId);
           });
 
-        context.archiveCommand.restore = jest
+        context.appMapCommand.restore = jest
           .fn()
           .mockImplementation(async (options: RestoreOptions) => {
             expect(options.exact).toEqual(true);
@@ -108,7 +106,7 @@ describe('merge', () => {
 
         await action.merge();
 
-        expect(context.archiveCommand.commands).toEqual([
+        expect(context.appMapCommand.commands).toEqual([
           {
             command: 'archive',
             options: {analyze: false, revision: '402dec8'},

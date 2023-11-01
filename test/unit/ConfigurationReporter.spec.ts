@@ -1,9 +1,9 @@
-import GitHubConfigurationReporter from '../src/GitHubConfigurationReporter';
-import * as gitHubContext from '../src/gitHubContext';
 import * as actionUtils from '@appland/action-utils';
 
-import * as test from './helper';
+import GitHubConfigurationReporter from '../../src/GitHubConfigurationReporter';
+import * as gitHubContext from '../../src/gitHubContext';
 import MockCommenter from './MockCommenter';
+import * as test from './helper';
 
 describe('ConfigurationReporter', () => {
   let context: test.ArchiveTestContext;
@@ -14,11 +14,13 @@ describe('ConfigurationReporter', () => {
 
   beforeEach(async () => {
     context = new test.ArchiveTestContext();
+    await context.setup();
+
     commenter = new MockCommenter();
     reporter = new GitHubConfigurationReporter();
     reporter.commenter = commenter;
   });
-  afterEach(() => jest.restoreAllMocks());
+  afterEach(async () => (context ? await context.teardown() : undefined));
 
   describe('with issue number available', () => {
     beforeEach(() => {
@@ -39,14 +41,14 @@ describe('ConfigurationReporter', () => {
 
           await reporter.report(
             revision,
-            context.archiveCommand,
+            context.appMapCommand,
             context.artifactStore,
             'fake-token'
           );
 
           expect(executeCommandSpy).not.toHaveBeenCalled();
 
-          expect(context.archiveCommand.commands).toEqual([
+          expect(context.appMapCommand.commands).toEqual([
             {command: 'inventory', options: {revision: '402dec8'}},
           ]);
 

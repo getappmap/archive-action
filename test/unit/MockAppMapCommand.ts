@@ -1,6 +1,6 @@
-import ArchiveCommand, {ArchiveOptions, RestoreOptions} from '../src/ArchiveCommand';
+import AppMapCommand, {ArchiveOptions, RestoreOptions} from '../../src/AppMapCommand';
 
-export class MockArchiveCommand implements ArchiveCommand {
+export class MockAppMapCommand implements AppMapCommand {
   public commands: {command: string; options: any}[] = [];
 
   async archive(options: ArchiveOptions): Promise<void> {
@@ -13,9 +13,5 @@ export class MockArchiveCommand implements ArchiveCommand {
 
   async generateConfigurationReport(revision: string): Promise<void> {
     this.commands.push({command: 'inventory', options: {revision}});
-  }
-
-  async generateOpenAPI(): Promise<void> {
-    this.commands.push({command: 'openapi', options: {}});
   }
 }

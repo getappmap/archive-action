@@ -12341,15 +12341,6 @@
       "repository": "git@github.com:land-of-apps/sample_app_6th_ed.git",
       "branch": "demo/break-test",
       "commit": "298bd33d6cc730cf3ba90476d5f53441d323f983",
-      "status": [
-        "M app/controllers/users_controller.rb",
-        "?? .appmap/",
-        "?? .gitattributes",
-        "?? .rufo",
-        "?? change-report/",
-        "?? rails_gem_paths.rb",
-        "?? sql_warning.txt"
-      ],
       "git_last_annotated_tag": null,
       "git_last_tag": null,
       "git_commits_since_last_annotated_tag": null,
